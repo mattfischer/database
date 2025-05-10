@@ -8,10 +8,13 @@ public:
     typedef uint16_t Index;
     typedef uint16_t Size;
 
-    CellPage(Page &page, Size fixedCellSize = 0);
+    CellPage(Page &page, size_t extraHeaderSize, Size fixedCellSize = 0);
+    void initialize();
 
     Index numCells();
     void *cell(Index index);
+    void *extraHeader();
+    Page &page();
 
     Index addCell(Size size);
 
@@ -40,5 +43,6 @@ private:
 
     Page &mPage;
     Size mFixedCellSize;
+    size_t mExtraHeaderSize;
 };
 #endif

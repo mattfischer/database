@@ -2,11 +2,15 @@
 
 #include <algorithm>
 
-CellPage::CellPage(Page &page, Size fixedCellSize)
+CellPage::CellPage(Page &page, size_t extraHeaderSize, Size fixedCellSize)
  : mPage(page)
 {
     mFixedCellSize = fixedCellSize;
+    mExtraHeaderSize = extraHeaderSize;
+}
 
+void CellPage::initialize()
+{
     Header &head = header();
     head.numCells = 0;
     head.dataStart = mPage.size();
@@ -24,6 +28,16 @@ void *CellPage::cell(Index index)
     }
 
     return reinterpret_cast<void*>(mPage.data(cellDataOffset(index)));
+}
+
+void *CellPage::extraHeader()
+{
+    return reinterpret_cast<void*>(mPage.data(sizeof(Header)));
+}
+
+Page &CellPage::page()
+{
+    return mPage;
 }
 
 CellPage::Index CellPage::addCell(Size size)
@@ -86,7 +100,7 @@ CellPage::Header &CellPage::header()
 
 uint16_t *CellPage::offsetsArray()
 {
-    return reinterpret_cast<uint16_t*>(mPage.data(sizeof(Header)));
+    return reinterpret_cast<uint16_t*>(mPage.data(sizeof(Header) + mExtraHeaderSize));
 }
 
 uint16_t CellPage::cellOffset(Index index)
@@ -103,7 +117,7 @@ uint16_t CellPage::cellDataOffset(Index index)
 uint16_t CellPage::allocateCell(Size size)
 {
     Header &head = header();
-    uint16_t arrayEnd = sizeof(Header) + (head.numCells + 1) * sizeof(uint16_t);
+    uint16_t arrayEnd = sizeof(Header) + mExtraHeaderSize + (head.numCells + 1) * sizeof(uint16_t);
 
     Size totalSize = size + (mFixedCellSize == 0) ? sizeof(uint16_t) : 0;
 

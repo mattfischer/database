@@ -1,6 +1,7 @@
 project('database', 'cpp')
 
 sources = [
+    'BTree.cpp',
     'CellPage.cpp',
     'Main.cpp',
     'Page.cpp',
