@@ -1,6 +1,8 @@
 #include "CellPage.hpp"
 
 #include <algorithm>
+#include <iostream>
+#include <iomanip>
 
 CellPage::CellPage(Page &page, size_t extraHeaderSize, Size fixedCellSize)
  : mPage(page)
@@ -93,6 +95,15 @@ void CellPage::removeCells(Index begin, Index end)
     head.numCells -= (end - begin);
 }
 
+void CellPage::print()
+{
+    Header &head = header();
+    
+    for(Index i=0; i<head.numCells; i++) {
+        std::cout << std::hex << std::showbase << cellOffset(i) << ": " << cellSize(i) << std::endl;
+    }
+}
+
 CellPage::Header &CellPage::header()
 {
     return *reinterpret_cast<Header*>(mPage.data(0));
@@ -108,10 +119,20 @@ uint16_t CellPage::cellOffset(Index index)
     return offsetsArray()[index];
 }
 
+uint16_t CellPage::cellSize(Index index)
+{
+    Size size = mFixedCellSize;
+    if(size == 0) {
+        size = *reinterpret_cast<uint16_t*>(mPage.data(cellOffset(index)));
+    }
+
+    return size;
+}
+
 uint16_t CellPage::cellDataOffset(Index index)
 {
     uint16_t offset = cellOffset(index);
-    return offset + (mFixedCellSize == 0) ? sizeof(uint16_t) : 0;
+    return offset + ((mFixedCellSize == 0) ? sizeof(uint16_t) : 0);
 }
 
 uint16_t CellPage::allocateCell(Size size)
@@ -119,7 +140,7 @@ uint16_t CellPage::allocateCell(Size size)
     Header &head = header();
     uint16_t arrayEnd = sizeof(Header) + mExtraHeaderSize + (head.numCells + 1) * sizeof(uint16_t);
 
-    Size totalSize = size + (mFixedCellSize == 0) ? sizeof(uint16_t) : 0;
+    Size totalSize = size + ((mFixedCellSize == 0) ? sizeof(uint16_t) : 0);
 
     if(head.dataStart - arrayEnd < totalSize) {
         defragPage();

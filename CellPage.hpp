@@ -25,6 +25,10 @@ public:
     void removeCell(Index index);
     void removeCells(Index begin, Index end);
 
+    uint16_t cellSize(Index index);
+
+    void print();
+
 private:
     struct Header {
         uint16_t numCells;
