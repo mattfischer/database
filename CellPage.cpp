@@ -95,6 +95,32 @@ void CellPage::removeCells(Index begin, Index end)
     head.numCells -= (end - begin);
 }
 
+void CellPage::copyCells(CellPage &page, Index begin, Index end)
+{
+    for(Index i=begin; i<end; i++) {
+        Size size = page.cellSize(i);
+        Index index = addCell(size);
+
+        void *src = page.cell(i);
+        void *dst = cell(index);
+        std::memcpy(dst, src, size);
+    }
+}
+
+bool CellPage::canAllocateCell(Size size)
+{
+    Header &head = header();
+    uint16_t arrayEnd = sizeof(Header) + mExtraHeaderSize + (head.numCells + 1) * sizeof(uint16_t);
+
+    Size totalSize = size + ((mFixedCellSize == 0) ? sizeof(uint16_t) : 0);
+
+    if(head.dataStart - arrayEnd < totalSize) {
+        defragPage();
+    }
+
+    return (head.dataStart - arrayEnd >= totalSize);
+}
+
 void CellPage::print()
 {
     Header &head = header();

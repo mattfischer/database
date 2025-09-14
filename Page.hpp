@@ -6,6 +6,7 @@
 class Page {
 public:
     typedef size_t Index;
+    static const Index kInvalidIndex = SIZE_MAX;
 
     Page(size_t size, Index index);
 

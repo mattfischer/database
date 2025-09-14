@@ -25,6 +25,10 @@ public:
     void removeCell(Index index);
     void removeCells(Index begin, Index end);
 
+    void copyCells(CellPage &page, Index begin, Index end);
+
+    bool canAllocateCell(Size size);
+
     uint16_t cellSize(Index index);
 
     void print();
