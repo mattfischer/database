@@ -24,28 +24,47 @@ private:
     PageSet &mPageSet;
     Page::Index mRootIndex;
 
-    struct PageHeader {
+    class TreePage : public CellPage {
+    public:
+        TreePage(Page &page, Size fixedCellSize = 0);
+
         enum Type : uint8_t {
             Leaf,
             Indirect
         };
 
-        Type type;
-        Page::Index parent;
-    };
+        void initialize(Type type);
 
-    class LeafPage {
-    public:
-        LeafPage(Page &page);
+        Type type();
 
-        void initialize();
-
-        CellPage &cellPage();
-        Page &page();
         Page::Index parent();
         void setParent(Page::Index parent);
 
         RowId lowestRowId();
+
+    protected:
+        CellPage::Index search(RowId rowId);
+        RowId cellRowId(CellPage::Index index);
+        void *cellData(CellPage::Index index);
+
+        void *insertCell(RowId rowId, CellPage::Size size, CellPage::Index index);
+        bool canAllocateCell(CellPage::Size size);
+        TreePage split(PageSet &pageSet);
+
+    private:
+        struct Header {
+            Type type;
+            Page::Index parent;
+        };
+ 
+        Header &header();
+    };
+
+    class LeafPage : public TreePage {
+    public:
+        LeafPage(Page &page);
+
+        void initialize();
 
         void *lookup(RowId rowId);
         bool canAdd(size_t size);
@@ -55,54 +74,25 @@ private:
         LeafPage split(PageSet &pageSet);
 
         void print();
-
-    private:
-        PageHeader &header();
-
-        CellPage::Index search(RowId rowId);
-        RowId cellRowId(CellPage::Index index);
-
-        CellPage mCellPage;
     };
 
-    class IndirectPage
+    class IndirectPage : public TreePage
     {
     public:
         IndirectPage(Page &page);
     
         void initialize();
 
-        CellPage &cellPage();
-        Page &page();
-        Page::Index parent();
-        void setParent(Page::Index parent);
-
-        RowId lowestRowId();
-
         bool canAdd();
-        void add(RowId rowId, Page::Index pageIndex);
+        void add(TreePage &page);
 
         Page::Index lookup(RowId rowId);
         IndirectPage split(PageSet &pageSet);
 
         Page::Index cellPageIndex(CellPage::Index index);
-
-    private:
-        PageHeader &header();
-
-        CellPage::Index search(RowId rowId);
-        RowId cellRowId(CellPage::Index index);
-
-        struct IndirectCell {
-            RowId rowId;
-            Page::Index pageIndex;
-        };
-
-        CellPage mCellPage;
     };
 
     LeafPage findLeaf(RowId rowId);
-    void setPageParent(Page::Index pageIndex, Page::Index parent);
 };
 
 #endif
