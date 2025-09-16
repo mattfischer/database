@@ -14,7 +14,7 @@ public:
     void *add(RowId rowId, size_t size);
     void remove(RowId rowId);
 
-    LeafPage split();
+    std::tuple<LeafPage, RowId> split();
 
     void print();
 };

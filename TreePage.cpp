@@ -27,47 +27,9 @@ void TreePage::setParent(Page::Index parent)
     header().parent = parent;
 }
 
-TreePage::RowId TreePage::lowestRowId()
-{
-    return cellRowId(0);
-}
-
 TreePage::Header &TreePage::header()
 {
     return *reinterpret_cast<Header*>(CellPage::extraHeader());
-}
-
-CellPage::Index TreePage::search(RowId rowId)
-{
-    CellPage::Index start = 0;
-    CellPage::Index end = CellPage::numCells();
-
-    while(true) {
-        if(end == start) {
-            return start;
-        }
-
-        if(end == start + 1) {
-            RowId startRowId = cellRowId(start);
-            if(rowId <= startRowId) {
-                return start;
-            } else {
-                return end;
-            }
-        }
-
-        CellPage::Index mid = (start + end) / 2;
-        RowId midRowId = cellRowId(mid);
-        if(rowId == midRowId) {
-            return mid;
-        }
-
-        if(rowId < midRowId) {
-            end = mid;
-        } else {
-            start = mid;
-        }
-    }
 }
 
 TreePage::RowId TreePage::cellRowId(CellPage::Index index)
@@ -75,15 +37,9 @@ TreePage::RowId TreePage::cellRowId(CellPage::Index index)
     return *reinterpret_cast<RowId*>(CellPage::cell(index));
 }
 
-void TreePage::updateRowId(RowId oldRowId, RowId newRowId)
+void TreePage::setCellRowId(CellPage::Index index, RowId rowId)
 {
-    CellPage::Index index = search(oldRowId);
-    RowId *cellRowId = reinterpret_cast<RowId*>(CellPage::cell(index));
-    *cellRowId = newRowId;
-    if(index == 0 && parent() != Page::kInvalidIndex) {
-        TreePage parentPage(page().pageSet().page(parent()));
-        parentPage.updateRowId(oldRowId, newRowId);
-    }
+    *reinterpret_cast<RowId*>(CellPage::cell(index)) = rowId;
 }
 
 void *TreePage::cellData(CellPage::Index index)
@@ -105,7 +61,40 @@ bool TreePage::canAllocateCell(CellPage::Size size)
     return CellPage::canAllocateCell(size + sizeof(RowId));
 }
 
-TreePage TreePage::split()
+CellPage::Index TreePage::search(RowId rowId)
+{
+    CellPage::Index start = 0;
+    CellPage::Index end = CellPage::numCells();
+
+    while(true) {
+        if(end == start) {
+            return start;
+        }
+
+        if(end == start + 1) {
+            RowId startRowId = cellRowId(start);
+            if(startRowId != kInvalidRowId && rowId <= startRowId) {
+                return start;
+            } else {
+                return end;
+            }
+        }
+
+        CellPage::Index mid = (start + end) / 2;
+        RowId midRowId = cellRowId(mid);
+        if(rowId == midRowId) {
+            return mid;
+        }
+
+        if(rowId < midRowId) {
+            end = mid;
+        } else {
+            start = mid;
+        }
+    }
+}
+
+std::tuple<TreePage, TreePage::RowId> TreePage::split()
 {
     TreePage newPage(page().pageSet().addPage());
     newPage.initialize(header().type);
@@ -113,11 +102,13 @@ TreePage TreePage::split()
 
     CellPage::Index begin = CellPage::numCells() / 2;
     CellPage::Index end = CellPage::numCells();
+
+    RowId splitRow = cellRowId(begin);
     newPage.CellPage::copyCells(*this, begin, end);
 
     CellPage::removeCells(begin, end);
 
-    return newPage;
+    return {newPage, splitRow};
 }
 
 TreePage::Type TreePage::pageType(Page &page)

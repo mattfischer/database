@@ -29,10 +29,10 @@ void *BTree::add(RowId rowId, CellPage::Size size)
         return leafPage.add(rowId, size);
     }
     
-    LeafPage newLeafPage = leafPage.split();
+    auto [newLeafPage, splitRow] = leafPage.split();
 
     void *ret;
-    if(newLeafPage.lowestRowId() < rowId) {
+    if(splitRow <= rowId) {
         ret = newLeafPage.add(rowId, size);
     } else {
         ret = leafPage.add(rowId, size);
@@ -50,28 +50,29 @@ void *BTree::add(RowId rowId, CellPage::Size size)
             IndirectPage indirectPage(mPageSet.addPage());
             indirectPage.initialize();
 
-            indirectPage.add(leftSplitPage);
-            indirectPage.add(rightSplitPage);
+            indirectPage.add(TreePage::kInvalidRowId, leftSplitPage);
+            indirectPage.add(splitRow, rightSplitPage);
 
             mRootIndex = indirectPage.page().index();
             break;
         } else {
             IndirectPage indirectPage(mPageSet.page(parentPageIndex));
             if(indirectPage.canAdd()) {
-                indirectPage.add(rightSplitPage);
+                indirectPage.add(splitRow, rightSplitPage);
                 break;
             } else {
-                IndirectPage newIndirectPage = indirectPage.split();
+                auto [newIndirectPage, indirectSplitRow] = indirectPage.split();
 
-                if(newIndirectPage.lowestRowId() < rightSplitPage.lowestRowId()) {
-                    newIndirectPage.add(rightSplitPage);
+                if(indirectSplitRow <= splitRow) {
+                    newIndirectPage.add(splitRow, rightSplitPage);
                 } else {
-                    indirectPage.add(rightSplitPage);
+                    indirectPage.add(splitRow, rightSplitPage);
                 }
 
                 parentPageIndex = indirectPage.parent();
                 leftSplitIndex = indirectPage.page().index();
                 rightSplitIndex = newIndirectPage.page().index();
+                splitRow = indirectSplitRow;
             }
         }
     }

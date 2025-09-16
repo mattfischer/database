@@ -8,7 +8,7 @@ sources = [
     'Main.cpp',
     'Page.cpp',
     'PageSet.cpp',
-    'TreePage.cpp'
+    'TreePage.cpp',
 ]
 
-executable('database', sources)
+executable('database', sources, cpp_args: ['/std:c++17'])
