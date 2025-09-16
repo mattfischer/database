@@ -11,10 +11,10 @@ public:
     void initialize();
 
     bool canAdd();
-    void add(TreePage &page);
+    void add(TreePage &childPage);
 
     Page::Index lookup(RowId rowId);
-    IndirectPage split(PageSet &pageSet);
+    IndirectPage split();
 
     Page::Index cellPageIndex(CellPage::Index index);
 };

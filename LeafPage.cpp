@@ -1,5 +1,7 @@
 #include "LeafPage.hpp"
 
+#include "IndirectPage.hpp"
+
 #include <iostream>
 
 LeafPage::LeafPage(Page &page)
@@ -33,6 +35,10 @@ void *LeafPage::add(RowId rowId, size_t size)
     if(index < CellPage::numCells() && cellRowId(index) == rowId) {
         return nullptr;
     } else {
+        if(index == 0 && parent() != Page::kInvalidIndex) {
+            IndirectPage indirectPage(page().pageSet().page(parent()));
+            indirectPage.updateRowId(lowestRowId(), rowId);
+        }
         return TreePage::insertCell(rowId, size, index);
     }
 }
@@ -45,9 +51,9 @@ void LeafPage::remove(RowId rowId)
     }
 }
 
-LeafPage LeafPage::split(PageSet &pageSet)
+LeafPage LeafPage::split()
 {
-    TreePage newPage = TreePage::split(pageSet);
+    TreePage newPage = TreePage::split();
     return LeafPage(newPage.page());
 }
 

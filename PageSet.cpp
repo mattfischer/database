@@ -9,7 +9,7 @@ Page &PageSet::page(Page::Index index)
 
 Page &PageSet::addPage()
 {
-    mPages.emplace_back(kPageSize, mPages.size());
+    mPages.emplace_back(*this, kPageSize, mPages.size());
 
     return mPages.back();
 }

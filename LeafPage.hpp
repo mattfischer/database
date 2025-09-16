@@ -14,7 +14,7 @@ public:
     void *add(RowId rowId, size_t size);
     void remove(RowId rowId);
 
-    LeafPage split(PageSet &pageSet);
+    LeafPage split();
 
     void print();
 };

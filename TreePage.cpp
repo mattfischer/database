@@ -75,6 +75,17 @@ TreePage::RowId TreePage::cellRowId(CellPage::Index index)
     return *reinterpret_cast<RowId*>(CellPage::cell(index));
 }
 
+void TreePage::updateRowId(RowId oldRowId, RowId newRowId)
+{
+    CellPage::Index index = search(oldRowId);
+    RowId *cellRowId = reinterpret_cast<RowId*>(CellPage::cell(index));
+    *cellRowId = newRowId;
+    if(index == 0 && parent() != Page::kInvalidIndex) {
+        TreePage parentPage(page().pageSet().page(parent()));
+        parentPage.updateRowId(oldRowId, newRowId);
+    }
+}
+
 void *TreePage::cellData(CellPage::Index index)
 {
     return reinterpret_cast<uint8_t*>(cell(index)) + sizeof(RowId);
@@ -86,9 +97,6 @@ void *TreePage::insertCell(RowId rowId, CellPage::Size size, CellPage::Index ind
     void *cellData = CellPage::cell(index);
     *reinterpret_cast<TreePage::RowId*>(cellData) = rowId;
 
-    if(index == 0) {
-        Page::Index parentIndex = parent();
-    }
     return reinterpret_cast<uint8_t*>(cellData) + sizeof(RowId);
 }
 
@@ -97,9 +105,9 @@ bool TreePage::canAllocateCell(CellPage::Size size)
     return CellPage::canAllocateCell(size + sizeof(RowId));
 }
 
-TreePage TreePage::split(PageSet &pageSet)
+TreePage TreePage::split()
 {
-    TreePage newPage(pageSet.addPage());
+    TreePage newPage(page().pageSet().addPage());
     newPage.initialize(header().type);
     newPage.setParent(parent());
 

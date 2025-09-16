@@ -23,6 +23,7 @@ public:
     void setParent(Page::Index parent);
 
     RowId lowestRowId();
+    void updateRowId(RowId oldRowId, RowId newRowId);
 
     static Type pageType(Page &page);
 
@@ -33,7 +34,7 @@ protected:
 
     void *insertCell(RowId rowId, CellPage::Size size, CellPage::Index index);
     bool canAllocateCell(CellPage::Size size);
-    TreePage split(PageSet &pageSet);
+    TreePage split();
 
 private:
     struct Header {

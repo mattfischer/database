@@ -29,7 +29,7 @@ void *BTree::add(RowId rowId, CellPage::Size size)
         return leafPage.add(rowId, size);
     }
     
-    LeafPage newLeafPage = leafPage.split(mPageSet);
+    LeafPage newLeafPage = leafPage.split();
 
     void *ret;
     if(newLeafPage.lowestRowId() < rowId) {
@@ -61,7 +61,7 @@ void *BTree::add(RowId rowId, CellPage::Size size)
                 indirectPage.add(rightSplitPage);
                 break;
             } else {
-                IndirectPage newIndirectPage = indirectPage.split(mPageSet);
+                IndirectPage newIndirectPage = indirectPage.split();
 
                 if(newIndirectPage.lowestRowId() < rightSplitPage.lowestRowId()) {
                     newIndirectPage.add(rightSplitPage);

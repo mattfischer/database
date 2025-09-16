@@ -1,9 +1,14 @@
 #include "Page.hpp"
 
-Page::Page(size_t size, Index index)
- : mData(size)
+Page::Page(PageSet &pageSet, size_t size, Index index)
+ : mPageSet(pageSet), mData(size)
 {
     mIndex = index;
+}
+
+PageSet &Page::pageSet() const
+{
+    return mPageSet;
 }
 
 size_t Page::size() const
