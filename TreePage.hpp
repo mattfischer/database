@@ -4,7 +4,7 @@
 #include "CellPage.hpp"
 #include "PageSet.hpp"
 
-#include <tuple>
+#include <string>
 
 class TreePage : public CellPage {
 public:
@@ -26,7 +26,7 @@ public:
     void setParent(Page::Index parent);
   
     static Type pageType(Page &page);
-    static void printPage(Page &page);
+    static void printPage(Page &page, const std::string &prefix);
 
 protected:
     CellPage::Index search(RowId rowId);

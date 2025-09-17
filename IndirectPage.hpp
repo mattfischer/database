@@ -3,6 +3,8 @@
 
 #include "TreePage.hpp"
 
+#include <tuple>
+
 class IndirectPage : public TreePage
 {
 public:
@@ -16,7 +18,7 @@ public:
     Page::Index lookup(RowId rowId);
     std::tuple<IndirectPage, RowId> split();
 
-    void print();
+    void print(const std::string &prefix);
 
     Page::Index cellPageIndex(CellPage::Index index);
 };

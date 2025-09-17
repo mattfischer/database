@@ -118,14 +118,14 @@ TreePage::Type TreePage::pageType(Page &page)
     return treePage.type();
 }
 
-void TreePage::printPage(Page &page)
+void TreePage::printPage(Page &page, const std::string &prefix)
 {
     switch(TreePage::pageType(page)) {
         case TreePage::Type::Leaf:
-            LeafPage(page).print();
+            LeafPage(page).print(prefix);
             break;
         case TreePage::Type::Indirect:
-            IndirectPage(page).print();
+            IndirectPage(page).print(prefix);
             break;
     }
 }

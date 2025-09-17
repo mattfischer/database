@@ -89,7 +89,7 @@ void BTree::remove(RowId rowId)
 void BTree::print()
 {
     Page &page = mPageSet.page(mRootIndex);
-    TreePage::printPage(page);
+    TreePage::printPage(page, "");
 }
 
 LeafPage BTree::findLeaf(RowId rowId)

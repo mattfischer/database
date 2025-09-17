@@ -3,6 +3,8 @@
 
 #include "TreePage.hpp"
 
+#include <tuple>
+
 class LeafPage : public TreePage {
 public:
     LeafPage(Page &page);
@@ -16,7 +18,7 @@ public:
 
     std::tuple<LeafPage, RowId> split();
 
-    void print();
+    void print(const std::string &prefix);
 };
 
 #endif

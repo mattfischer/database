@@ -56,15 +56,10 @@ std::tuple<IndirectPage, TreePage::RowId> IndirectPage::split()
     return {newPage, splitRow};
 }
 
-void IndirectPage::print()
+void IndirectPage::print(const std::string &prefix)
 {
-    std::cout << "Page " << page().index() << " (indirect";
-    if(parent() != Page::kInvalidIndex) {
-        std::cout << ", parent " << parent();
-    }
-    std::cout << ")" << std::endl;
-
     for(CellPage::Index i=0; i<CellPage::numCells(); i++) {
+        std::cout << prefix;
         if(i == 0) {
             std::cout << "< " << cellRowId(1);
         } else if(i < CellPage::numCells() - 1) {
@@ -72,14 +67,17 @@ void IndirectPage::print()
         } else {
             std::cout << ">= " << cellRowId(i);
         }
-        std::cout << ": " << cellPageIndex(i) << std::endl;
-    }
-    std::cout << std::endl;
 
-    for(CellPage::Index i=0; i<CellPage::numCells(); i++) {
         Page::Index index = cellPageIndex(i);
-        TreePage::printPage(page().pageSet().page(index));
-        std::cout << std::endl;
+        TreePage childPage(page().pageSet().page(index));
+        std::cout << " (";
+        std::cout << ((childPage.type() == TreePage::Type::Leaf) ? "leaf" : "indirect");
+        std::cout << " page " << cellPageIndex(i);
+        if(childPage.parent() != Page::kInvalidIndex) {
+            std::cout << ", parent " << childPage.parent();
+        }
+        std::cout << ")" << std::endl;
+        TreePage::printPage(childPage.page(), prefix + "  ");
     }
 }
 
