@@ -26,6 +26,7 @@ public:
     void setParent(Page::Index parent);
   
     static Type pageType(Page &page);
+    static void printPage(Page &page);
 
 protected:
     CellPage::Index search(RowId rowId);
@@ -35,7 +36,7 @@ protected:
 
     void *insertCell(RowId rowId, CellPage::Size size, CellPage::Index index);
     bool canAllocateCell(CellPage::Size size);
-    std::tuple<TreePage, RowId> split();
+    RowId split(TreePage &newPage);
 
 private:
     struct Header {

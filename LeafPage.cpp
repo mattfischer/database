@@ -49,13 +49,21 @@ void LeafPage::remove(RowId rowId)
 
 std::tuple<LeafPage, TreePage::RowId> LeafPage::split()
 {
-    auto [newPage, splitPoint] = TreePage::split();
-    return {LeafPage(newPage.page()), splitPoint};
+    LeafPage newPage(page().pageSet().addPage());
+    newPage.initialize();
+
+    RowId splitPoint = TreePage::split(newPage);
+    return {newPage, splitPoint};
 }
 
 void LeafPage::print()
 {
+    std::cout << "Page " << page().index() << " (leaf";
+    if(parent() != Page::kInvalidIndex) {
+        std::cout << ", parent " << parent();
+    }
+    std::cout << ")" << std::endl;
     for(CellPage::Index i=0; i<CellPage::numCells(); i++) {
-        std::cout << std::hex << std::showbase << cellRowId(i) << ": " << CellPage::cellSize(i) << std::endl;
+        std::cout << cellRowId(i) << ": " << CellPage::cellSize(i) << std::endl;
     }
 }

@@ -1,5 +1,8 @@
 #include "TreePage.hpp"
 
+#include "LeafPage.hpp"
+#include "IndirectPage.hpp"
+
 TreePage::TreePage(Page &page, Size fixedCellSize)
 : CellPage(page, sizeof(Header), fixedCellSize ? fixedCellSize + sizeof(RowId) : 0)
 {
@@ -94,10 +97,8 @@ CellPage::Index TreePage::search(RowId rowId)
     }
 }
 
-std::tuple<TreePage, TreePage::RowId> TreePage::split()
+TreePage::RowId TreePage::split(TreePage &newPage)
 {
-    TreePage newPage(page().pageSet().addPage());
-    newPage.initialize(header().type);
     newPage.setParent(parent());
 
     CellPage::Index begin = CellPage::numCells() / 2;
@@ -108,11 +109,23 @@ std::tuple<TreePage, TreePage::RowId> TreePage::split()
 
     CellPage::removeCells(begin, end);
 
-    return {newPage, splitRow};
+    return splitRow;
 }
 
 TreePage::Type TreePage::pageType(Page &page)
 {
     TreePage treePage(page, 0);
     return treePage.type();
+}
+
+void TreePage::printPage(Page &page)
+{
+    switch(TreePage::pageType(page)) {
+        case TreePage::Type::Leaf:
+            LeafPage(page).print();
+            break;
+        case TreePage::Type::Indirect:
+            IndirectPage(page).print();
+            break;
+    }
 }

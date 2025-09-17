@@ -4,6 +4,7 @@
 #include "Page.hpp"
 
 #include <vector>
+#include <memory>
 
 class PageSet {
 public:
@@ -12,7 +13,7 @@ public:
     Page &addPage();
 
 private:
-    std::vector<Page> mPages;
+    std::vector<std::unique_ptr<Page>> mPages;
 };
 
 #endif

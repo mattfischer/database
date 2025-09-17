@@ -1,5 +1,7 @@
 #include "IndirectPage.hpp"
 
+#include <iostream>
+
 IndirectPage::IndirectPage(Page &page)
 : TreePage(page, sizeof(Page::Index))
 {
@@ -39,17 +41,46 @@ Page::Index IndirectPage::lookup(RowId rowId)
 
 std::tuple<IndirectPage, TreePage::RowId> IndirectPage::split()
 {
-    auto [newPage, splitRow] = TreePage::split();
-    IndirectPage newIndirectPage(newPage.page());
-    newIndirectPage.setCellRowId(0, TreePage::kInvalidRowId);
+    IndirectPage newPage(page().pageSet().addPage());
+    newPage.initialize();
 
-    for(CellPage::Index index = 0; index < newIndirectPage.CellPage::numCells(); index++) {
-        Page::Index childPageIndex = newIndirectPage.cellPageIndex(index);
+    RowId splitRow = TreePage::split(newPage);
+    newPage.setCellRowId(0, TreePage::kInvalidRowId);
+
+    for(CellPage::Index index = 0; index < newPage.CellPage::numCells(); index++) {
+        Page::Index childPageIndex = newPage.cellPageIndex(index);
         Page &childPage = page().pageSet().page(childPageIndex);
-        TreePage(childPage).setParent(newIndirectPage.page().index());
+        TreePage(childPage).setParent(newPage.page().index());
     }
 
-    return {newIndirectPage, splitRow};
+    return {newPage, splitRow};
+}
+
+void IndirectPage::print()
+{
+    std::cout << "Page " << page().index() << " (indirect";
+    if(parent() != Page::kInvalidIndex) {
+        std::cout << ", parent " << parent();
+    }
+    std::cout << ")" << std::endl;
+
+    for(CellPage::Index i=0; i<CellPage::numCells(); i++) {
+        if(i == 0) {
+            std::cout << "< " << cellRowId(1);
+        } else if(i < CellPage::numCells() - 1) {
+            std::cout << cellRowId(i) << "-" << cellRowId(i+1) - 1;
+        } else {
+            std::cout << ">= " << cellRowId(i);
+        }
+        std::cout << ": " << cellPageIndex(i) << std::endl;
+    }
+    std::cout << std::endl;
+
+    for(CellPage::Index i=0; i<CellPage::numCells(); i++) {
+        Page::Index index = cellPageIndex(i);
+        TreePage::printPage(page().pageSet().page(index));
+        std::cout << std::endl;
+    }
 }
 
 Page::Index IndirectPage::cellPageIndex(CellPage::Index index)

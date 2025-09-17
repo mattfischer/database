@@ -149,7 +149,7 @@ uint16_t CellPage::cellSize(Index index)
 {
     Size size = mFixedCellSize;
     if(size == 0) {
-        size = *reinterpret_cast<uint16_t*>(mPage.data(cellOffset(index)));
+        size = *reinterpret_cast<uint16_t*>(mPage.data(cellOffset(index))) - sizeof(uint16_t);
     }
 
     return size;

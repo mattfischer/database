@@ -16,6 +16,8 @@ public:
     Page::Index lookup(RowId rowId);
     std::tuple<IndirectPage, RowId> split();
 
+    void print();
+
     Page::Index cellPageIndex(CellPage::Index index);
 };
 

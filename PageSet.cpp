@@ -1,15 +1,15 @@
 #include "PageSet.hpp"
 
-static const size_t kPageSize = 4096;
+static const size_t kPageSize = 128;
 
 Page &PageSet::page(Page::Index index)
 { 
-    return mPages[index];
+    return *mPages[index];
 }
 
 Page &PageSet::addPage()
 {
-    mPages.emplace_back(*this, kPageSize, mPages.size());
+    mPages.push_back(std::make_unique<Page>(*this, kPageSize, mPages.size()));
 
-    return mPages.back();
+    return *mPages.back();
 }

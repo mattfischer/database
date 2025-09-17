@@ -13,12 +13,15 @@ int main(int argc, char *argv[])
     BTree tree(pageSet, page.index());
     tree.intialize();
 
-    tree.add(5, 50);
-    tree.add(2, 20);
-    tree.add(8, 80);
-    tree.add(7, 70);
-    
-    tree.print();
+    srand(12345);
+    for(int i=0; i<100; i++) {
+        uint32_t key = rand() % 1000;
+        tree.add(key, 0x10);
+        tree.print();
+        std::cout << std::endl;
+        std::cout << "----------" << std::endl;
+        std::cout << std::endl;
+    }
 
     return 0;
 }
