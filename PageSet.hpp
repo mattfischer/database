@@ -11,6 +11,7 @@ public:
     Page &page(Page::Index index);
 
     Page &addPage();
+    void deletePage(Page &page);
 
 private:
     std::vector<std::unique_ptr<Page>> mPages;

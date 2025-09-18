@@ -50,6 +50,11 @@ void *TreePage::cellData(CellPage::Index index)
     return reinterpret_cast<uint8_t*>(cell(index)) + sizeof(RowId);
 }
 
+CellPage::Size TreePage::cellDataSize(CellPage::Index index)
+{
+    return cellSize(index) - sizeof(RowId);
+}
+
 void *TreePage::insertCell(RowId rowId, CellPage::Size size, CellPage::Index index)
 {
     CellPage::insertCell(size + sizeof(TreePage::RowId), index);
@@ -110,6 +115,16 @@ TreePage::RowId TreePage::split(TreePage &newPage)
     CellPage::removeCells(begin, end);
 
     return splitRow;
+}
+
+bool TreePage::isDeficient()
+{
+    return freeSpace() > page().size() / 2;
+}
+
+bool TreePage::canSupplyItem()
+{
+    return freeSpace() + cellSize(0) < page().size() / 2;
 }
 
 TreePage::Type TreePage::pageType(Page &page)

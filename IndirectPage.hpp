@@ -18,6 +18,8 @@ public:
     Page::Index lookup(RowId rowId);
     std::tuple<IndirectPage, RowId> split();
 
+    RowId rectifyDeficientChild(TreePage &childPage, RowId removedRowId);
+
     void print(const std::string &prefix);
 
     Page::Index cellPageIndex(CellPage::Index index);

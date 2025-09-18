@@ -13,3 +13,7 @@ Page &PageSet::addPage()
 
     return *mPages.back();
 }
+
+void PageSet::deletePage(Page &page)
+{
+}

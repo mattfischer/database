@@ -84,6 +84,30 @@ void BTree::remove(RowId rowId)
 {
     LeafPage leafPage = findLeaf(rowId);
     leafPage.remove(rowId);
+
+    Page::Index index = leafPage.page().index();
+    RowId removedRowId = rowId;
+    CellPage::Size fixedCellSize = leafPage.fixedCellSize();
+    while(true) {
+        TreePage page(mPageSet.page(index), fixedCellSize);
+        if(!page.isDeficient()) {
+            break;
+        }
+
+        if(page.parent() == Page::kInvalidIndex) {
+            if(page.numCells() == 1) {
+                mRootIndex = IndirectPage(page.page()).cellPageIndex(0);
+                mPageSet.deletePage(page.page());
+                TreePage(mPageSet.page(mRootIndex)).setParent(Page::kInvalidIndex);
+            }
+            break;
+        }
+        IndirectPage parentPage(mPageSet.page(page.parent()));
+        removedRowId = parentPage.rectifyDeficientChild(page, removedRowId);
+
+        index = parentPage.page().index();
+        fixedCellSize = parentPage.fixedCellSize() - sizeof(RowId);
+    }
 }
 
 void BTree::print()

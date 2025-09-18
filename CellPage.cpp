@@ -16,6 +16,7 @@ void CellPage::initialize()
     Header &head = header();
     head.numCells = 0;
     head.dataStart = mPage.size();
+    head.freeSpace = mPage.size() - sizeof(Header) - mExtraHeaderSize;
 }
 
 CellPage::Index CellPage::numCells()
@@ -60,6 +61,7 @@ void CellPage::insertCell(Size size, Index index)
     std::memmove(offsets + index + 1, offsets + index, (head.numCells - index) * sizeof(uint16_t));
     offsets[index] = offset;
     head.numCells++;
+    head.freeSpace -= size + sizeof(uint16_t);
 }
 
 void CellPage::shiftLeftAndInsertCell(Size size, Index index)
@@ -90,6 +92,10 @@ void CellPage::removeCell(Index index)
 void CellPage::removeCells(Index begin, Index end)
 {
     Header &head = header();
+    for(Index i = begin; i < end; i++) {
+        head.freeSpace += cellSize(i) + sizeof(uint16_t);
+    }
+
     uint16_t *array = offsetsArray();
     std::memmove(array + begin, array + end, (head.numCells - end) * sizeof(uint16_t));
     head.numCells -= (end - begin);
@@ -110,15 +116,9 @@ void CellPage::copyCells(CellPage &page, Index begin, Index end)
 bool CellPage::canAllocateCell(Size size)
 {
     Header &head = header();
-    uint16_t arrayEnd = sizeof(Header) + mExtraHeaderSize + (head.numCells + 1) * sizeof(uint16_t);
-
     Size totalSize = size + ((mFixedCellSize == 0) ? sizeof(uint16_t) : 0);
 
-    if(head.dataStart - arrayEnd < totalSize) {
-        defragPage();
-    }
-
-    return (head.dataStart - arrayEnd >= totalSize);
+    return (head.freeSpace >= totalSize + sizeof(uint16_t));
 }
 
 void CellPage::print()
@@ -153,6 +153,18 @@ uint16_t CellPage::cellSize(Index index)
     }
 
     return size;
+}
+
+CellPage::Size CellPage::freeSpace()
+{
+    Header &head = header();
+
+    return head.freeSpace;
+}
+
+CellPage::Size CellPage::fixedCellSize()
+{
+    return mFixedCellSize;
 }
 
 uint16_t CellPage::cellDataOffset(Index index)

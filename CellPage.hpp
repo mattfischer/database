@@ -15,6 +15,7 @@ public:
     void *cell(Index index);
     void *extraHeader();
     Page &page();
+    Size fixedCellSize();
 
     Index addCell(Size size);
 
@@ -31,12 +32,16 @@ public:
 
     uint16_t cellSize(Index index);
 
+    void defragPage();
+    Size freeSpace();
+
     void print();
 
 private:
     struct Header {
         uint16_t numCells;
         uint16_t dataStart;
+        uint16_t freeSpace;
     };
 
     Header &header();
@@ -46,8 +51,6 @@ private:
     uint16_t cellDataOffset(Index index);
 
     uint16_t allocateCell(Size size);
-
-    void defragPage();
 
     Page &mPage;
     Size mFixedCellSize;

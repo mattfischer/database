@@ -24,17 +24,21 @@ public:
 
     Page::Index parent();
     void setParent(Page::Index parent);
-  
+
+    RowId cellRowId(CellPage::Index index);
+    void setCellRowId(CellPage::Index index, RowId rowId);
+    void *cellData(CellPage::Index index);
+    Size cellDataSize(CellPage::Index index);
+
+    bool isDeficient();
+    bool canSupplyItem();
+    void *insertCell(RowId rowId, CellPage::Size size, CellPage::Index index);
+
     static Type pageType(Page &page);
     static void printPage(Page &page, const std::string &prefix);
 
 protected:
     CellPage::Index search(RowId rowId);
-    RowId cellRowId(CellPage::Index index);
-    void setCellRowId(CellPage::Index index, RowId rowId);
-    void *cellData(CellPage::Index index);
-
-    void *insertCell(RowId rowId, CellPage::Size size, CellPage::Index index);
     bool canAllocateCell(CellPage::Size size);
     RowId split(TreePage &newPage);
 

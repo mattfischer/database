@@ -14,13 +14,18 @@ int main(int argc, char *argv[])
     tree.intialize();
 
     srand(12345);
-    for(int i=0; i<100; i++) {
+    for(int i=0; i<32; i++) {
         uint32_t key = rand() % 1000;
         tree.add(key, 0x10);
+    }
+    tree.print();
+
+    srand(12345);
+    for(int i=0; i<32; i++) {
+        uint32_t key = rand() % 1000;
+        tree.remove(key);
         tree.print();
-        std::cout << std::endl;
         std::cout << "----------" << std::endl;
-        std::cout << std::endl;
     }
 
     return 0;

@@ -58,6 +58,12 @@ std::tuple<LeafPage, TreePage::RowId> LeafPage::split()
 
 void LeafPage::print(const std::string &prefix)
 {
+    std::cout << prefix << "# Leaf page " << page().index();
+    if(parent() != Page::kInvalidIndex) {
+        std::cout << " (parent " << parent() << ")";
+    }
+    std::cout << std::endl;
+
     for(CellPage::Index i=0; i<CellPage::numCells(); i++) {
         std::cout << prefix << cellRowId(i) << ": " << CellPage::cellSize(i) << std::endl;
     }
