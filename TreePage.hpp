@@ -23,6 +23,7 @@ public:
     void initialize(Type type);
 
     Page &page();
+    Page::Index pageIndex();
 
     Type type();
 
@@ -87,6 +88,8 @@ private:
     Index search(RowId rowId);
 
     void defragPage();
+
+    PageSet &pageSet();
 
     Page &mPage;
 };
