@@ -1,54 +1,94 @@
 #ifndef TREEPAGE_HPP
 #define TREEPAGE_HPP
 
-#include "CellPage.hpp"
 #include "PageSet.hpp"
 
 #include <string>
 
-class TreePage : public CellPage {
+class TreePage {
 public:
     typedef uint32_t RowId;
     static const RowId kInvalidRowId = UINT32_MAX;
 
-    TreePage(Page &page, Size fixedCellSize = 0);
+    typedef uint16_t Index;
+    typedef uint16_t Size;
 
     enum Type : uint8_t {
         Leaf,
         Indirect
     };
 
+    TreePage(Page &page);
+
     void initialize(Type type);
+
+    Page &page();
 
     Type type();
 
     Page::Index parent();
     void setParent(Page::Index parent);
 
-    RowId cellRowId(CellPage::Index index);
-    void setCellRowId(CellPage::Index index, RowId rowId);
-    void *cellData(CellPage::Index index);
-    Size cellDataSize(CellPage::Index index);
+    Size freeSpace();
+
+    Index numCells();
+
+    void *cellData(Index index);
+    Size cellDataSize(Index index);
+
+    RowId cellRowId(Index index);
+    void setCellRowId(Index index, RowId rowId);
+
+    void *insertCell(RowId rowId, Size size, Index index);
+
+    void removeCell(Index index);
+    void removeCells(Index begin, Index end);
+
+    void copyCells(TreePage &page, Index begin, Index end);
+
+    std::tuple<TreePage, RowId> split();
 
     bool isDeficient();
     bool canSupplyItem();
-    void *insertCell(RowId rowId, CellPage::Size size, CellPage::Index index);
 
-    static Type pageType(Page &page);
-    static void printPage(Page &page, const std::string &prefix);
+    void *leafLookup(RowId rowId);
+    bool leafCanAdd(size_t size);
+    void *leafAdd(RowId rowId, size_t size);
+    void leafRemove(RowId rowId);
 
-protected:
-    CellPage::Index search(RowId rowId);
-    bool canAllocateCell(CellPage::Size size);
-    RowId split(TreePage &newPage);
+    bool indirectCanAdd();
+    void indirectAdd(RowId rowId, TreePage &childPage);
+    Page::Index indirectPageIndex(Index index);
+    Page::Index indirectLookup(RowId rowId);
+    RowId indirectRectifyDeficientChild(TreePage &childPage, RowId removedRowId);
+
+    void print(const std::string &prefix);
 
 private:
     struct Header {
         Type type;
+        uint16_t numCells;
+        uint16_t dataStart;
+        uint16_t freeSpace;
         Page::Index parent;
     };
 
     Header &header();
+    uint16_t *offsetsArray();
+
+    void *cell(Index index);
+    Size cellSize(Index index);
+    uint16_t cellOffset(Index index);
+    uint16_t cellDataOffset(Index index);
+
+    uint16_t allocateCell(RowId rowId, Size size);
+    bool canAllocateCell(Size size);
+
+    Index search(RowId rowId);
+
+    void defragPage();
+
+    Page &mPage;
 };
 
 #endif

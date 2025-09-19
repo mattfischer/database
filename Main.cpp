@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include "PageSet.hpp"
-#include "CellPage.hpp"
 #include "BTree.hpp"
 
 #include <iostream>
@@ -17,8 +16,9 @@ int main(int argc, char *argv[])
     for(int i=0; i<32; i++) {
         uint32_t key = rand() % 1000;
         tree.add(key, 0x10);
+        tree.print();
+        std::cout << "----------" << std::endl;
     }
-    tree.print();
 
     srand(12345);
     for(int i=0; i<32; i++) {
