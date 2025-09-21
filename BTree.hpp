@@ -17,7 +17,10 @@ public:
     void *add(RowId rowId, TreePage::Size size);
     void remove(RowId);
 
-    void print();
+    template <typename F> void print(F printCell) {
+        Page &page = mPageSet.page(mRootIndex);
+        TreePage(page).print("", printCell);
+    }
 
 private:
     PageSet &mPageSet;

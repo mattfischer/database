@@ -128,8 +128,8 @@ void TreePage::copyCells(TreePage &page, Index begin, Index end)
         Index index = numCells();
         insertCell(page.cellRowId(i), size, index);
 
-        void *src = page.cell(i);
-        void *dst = cell(index);
+        void *src = page.cellData(i);
+        void *dst = cellData(index);
         std::memcpy(dst, src, size);
     }
 }
@@ -247,7 +247,8 @@ TreePage::RowId TreePage::indirectRectifyDeficientChild(TreePage &childPage, Row
         if(rightNeighbor.canSupplyItem()) {
             // shift item from right neighbor
             Size size = rightNeighbor.cellDataSize(0);
-            void *dst = childPage.insertCell(cellRowId(childIndex + 1), size, childPage.numCells());
+            RowId rowId = (childPage.type() == TreePage::Indirect) ? cellRowId(childIndex + 1) : rightNeighbor.cellRowId(0);
+            void *dst = childPage.insertCell(rowId, size, childPage.numCells());
             void *src = rightNeighbor.cellData(0);
             std::memcpy(dst, src, size);
             setCellRowId(childIndex + 1, rightNeighbor.cellRowId(1));
@@ -279,7 +280,9 @@ TreePage::RowId TreePage::indirectRectifyDeficientChild(TreePage &childPage, Row
         TreePage leftNeighbor(pageSet().page(indirectPageIndex(childIndex - 1)));
         if(leftNeighbor.canSupplyItem()) {
             // shift item from left neighbor
-            childPage.setCellRowId(0, cellRowId(childIndex));
+            if(childPage.type() == TreePage::Type::Indirect) {
+                childPage.setCellRowId(0, cellRowId(childIndex));
+            }
             Size size = leftNeighbor.cellDataSize(leftNeighbor.numCells() - 1);
             void *dst = childPage.insertCell(leftNeighbor.cellRowId(leftNeighbor.numCells() - 1), size, 0);
             void *src = leftNeighbor.cellData(leftNeighbor.numCells() - 1);
@@ -310,43 +313,6 @@ TreePage::RowId TreePage::indirectRectifyDeficientChild(TreePage &childPage, Row
             pageSet().deletePage(childPage.page());
             return removedRowId;
         }
-    }
-}
-
-void TreePage::print(const std::string &prefix)
-{
-    switch(type()) {
-        case TreePage::Type::Leaf:
-            std::cout << prefix << "# Leaf page " << pageIndex();
-            if(parent() != Page::kInvalidIndex) {
-                std::cout << " (parent " << parent() << ")";
-            }
-            std::cout << std::endl;
-
-            for(Index i=0; i<numCells(); i++) {
-                std::cout << prefix << cellRowId(i) << ": " << cellDataSize(i) << std::endl;
-            }
-            break;
-        case TreePage::Type::Indirect:
-            std::cout << prefix << "# Indirect page " << pageIndex();
-            if(parent() != Page::kInvalidIndex) {
-                std::cout << " (parent " << parent() << ")";
-            }
-            std::cout << std::endl;
-
-            for(Index i=0; i<numCells(); i++) {
-                std::cout << prefix;
-                if(i == 0) {
-                    std::cout << "_";
-                } else {
-                    std::cout << cellRowId(i);
-                }
-                std::cout << ": " << std::endl;
-
-                Page::Index index = indirectPageIndex(i);
-                TreePage(pageSet().page(index)).print(prefix + "  ");
-            }
-            break;
     }
 }
 

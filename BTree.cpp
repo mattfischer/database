@@ -92,7 +92,7 @@ void BTree::remove(RowId rowId)
         }
 
         if(page.parent() == Page::kInvalidIndex) {
-            if(page.numCells() == 1) {
+            if(page.type() == TreePage::Indirect && page.numCells() == 1) {
                 mRootIndex = page.indirectPageIndex(0);
                 mPageSet.deletePage(page.page());
                 TreePage(mPageSet.page(mRootIndex)).setParent(Page::kInvalidIndex);
@@ -104,12 +104,6 @@ void BTree::remove(RowId rowId)
 
         index = parentPage.page().index();
     }
-}
-
-void BTree::print()
-{
-    Page &page = mPageSet.page(mRootIndex);
-    TreePage(page).print("");
 }
 
 TreePage BTree::findLeaf(RowId rowId)

@@ -63,7 +63,7 @@ public:
     Page::Index indirectLookup(RowId rowId);
     RowId indirectRectifyDeficientChild(TreePage &childPage, RowId removedRowId);
 
-    void print(const std::string &prefix);
+    template <typename F> void print(const std::string &prefix, F printCell);
 
 private:
     struct Header {
@@ -93,5 +93,44 @@ private:
 
     Page &mPage;
 };
+
+template <typename F> void TreePage::print(const std::string &prefix, F printCell)
+{
+    switch(type()) {
+        case TreePage::Type::Leaf:
+            std::cout << prefix << "# Leaf page " << pageIndex();
+            if(parent() != Page::kInvalidIndex) {
+                std::cout << " (parent " << parent() << ")";
+            }
+            std::cout << std::endl;
+
+            for(Index i=0; i<numCells(); i++) {
+                std::cout << prefix << cellRowId(i) << ": ";
+                printCell(cellData(i));
+                std::cout << std::endl;
+            }
+            break;
+        case TreePage::Type::Indirect:
+            std::cout << prefix << "# Indirect page " << pageIndex();
+            if(parent() != Page::kInvalidIndex) {
+                std::cout << " (parent " << parent() << ")";
+            }
+            std::cout << std::endl;
+
+            for(Index i=0; i<numCells(); i++) {
+                std::cout << prefix;
+                if(i == 0) {
+                    std::cout << "_";
+                } else {
+                    std::cout << cellRowId(i);
+                }
+                std::cout << ": " << std::endl;
+
+                Page::Index index = indirectPageIndex(i);
+                TreePage(pageSet().page(index)).print(prefix + "  ", printCell);
+            }
+            break;
+    }
+}
 
 #endif
