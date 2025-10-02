@@ -5,28 +5,43 @@
 
 #include "TreePage.hpp"
 
+#include <memory>
+
 class BTree {
 public:
     typedef TreePage::RowId RowId;
 
-    BTree(PageSet &pageSet, Page::Index rootIndex);
+    class RowIdKeyDefinition : public TreePage::KeyDefinition {
+    public:
+        virtual TreePage::Size fixedSize() override { return sizeof(RowId); }
+        virtual int compare(void *a, void *b) {
+            RowId ar = *reinterpret_cast<RowId*>(a);
+            RowId br = *reinterpret_cast<RowId*>(b);
+            if(ar < br) return -1;
+            if(ar == br) return 0;
+            return 1;
+        }
+    };
+
+    BTree(PageSet &pageSet, Page::Index rootIndex, std::unique_ptr<TreePage::KeyDefinition> keyDefinition);
 
     void intialize();
 
-    void *lookup(RowId rowId);
+    void *lookup(void *key);
     void *add(RowId rowId, TreePage::Size size);
     void remove(RowId);
 
     template <typename F> void print(F printCell) {
         Page &page = mPageSet.page(mRootIndex);
-        TreePage(page).print("", printCell);
+        TreePage(page, *mKeyDefinition).print("", printCell);
     }
 
 private:
     PageSet &mPageSet;
     Page::Index mRootIndex;
+    std::unique_ptr<TreePage::KeyDefinition> mKeyDefinition;
 
-    TreePage findLeaf(RowId rowId);
+    TreePage findLeaf(void *key);
 };
 
 #endif

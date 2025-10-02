@@ -18,7 +18,15 @@ public:
         Indirect
     };
 
-    TreePage(Page &page);
+    class KeyDefinition {
+    public:
+        virtual ~KeyDefinition() = default;
+
+        virtual Size fixedSize() = 0;
+        virtual int compare(void *a, void *b) = 0;
+    };
+
+    TreePage(Page &page, KeyDefinition &keyDefinition);
 
     void initialize(Type type);
 
@@ -34,13 +42,16 @@ public:
 
     Index numCells();
 
+    void *cellKey(Index index);
+    Size cellKeySize(Index index);
+
     void *cellData(Index index);
     Size cellDataSize(Index index);
 
     RowId cellRowId(Index index);
     void setCellRowId(Index index, RowId rowId);
 
-    void *insertCell(RowId rowId, Size size, Index index);
+    void *insertCell(void *key, Size keySize, Size dataSize, Index index);
 
     void removeCell(Index index);
     void removeCells(Index begin, Index end);
@@ -52,15 +63,15 @@ public:
     bool isDeficient();
     bool canSupplyItem();
 
-    void *leafLookup(RowId rowId);
-    bool leafCanAdd(size_t size);
-    void *leafAdd(RowId rowId, size_t size);
+    void *leafLookup(void *key);
+    bool leafCanAdd(size_t keySize, size_t dataSize);
+    void *leafAdd(void *key, size_t keySize, size_t dataSize);
     void leafRemove(RowId rowId);
 
     bool indirectCanAdd();
     void indirectAdd(RowId rowId, TreePage &childPage);
     Page::Index indirectPageIndex(Index index);
-    Page::Index indirectLookup(RowId rowId);
+    Page::Index indirectLookup(void *key);
     RowId indirectRectifyDeficientChild(TreePage &childPage, RowId removedRowId);
 
     template <typename F> void print(const std::string &prefix, F printCell);
@@ -80,18 +91,20 @@ private:
     void *cell(Index index);
     Size cellSize(Index index);
     uint16_t cellOffset(Index index);
+    uint16_t cellKeyOffset(Index index); 
     uint16_t cellDataOffset(Index index);
 
-    uint16_t allocateCell(RowId rowId, Size size);
-    bool canAllocateCell(Size size);
+    uint16_t allocateCell(void *key, Size keySize, Size dataSize);
+    bool canAllocateCell(Size keySize, Size dataSize);
 
-    Index search(RowId rowId);
+    Index search(void *key);
 
     void defragPage();
 
     PageSet &pageSet();
 
     Page &mPage;
+    KeyDefinition &mKeyDefinition;
 };
 
 template <typename F> void TreePage::print(const std::string &prefix, F printCell)
@@ -127,7 +140,7 @@ template <typename F> void TreePage::print(const std::string &prefix, F printCel
                 std::cout << ": " << std::endl;
 
                 Page::Index index = indirectPageIndex(i);
-                TreePage(pageSet().page(index)).print(prefix + "  ", printCell);
+                TreePage(pageSet().page(index), mKeyDefinition).print(prefix + "  ", printCell);
             }
             break;
     }

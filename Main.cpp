@@ -11,7 +11,9 @@ int main(int argc, char *argv[])
 {
     PageSet pageSet;
     Page &page = pageSet.addPage();
-    BTree tree(pageSet, page.index());
+    std::unique_ptr<TreePage::KeyDefinition> keyDefinition = std::make_unique<BTree::RowIdKeyDefinition>();
+
+    BTree tree(pageSet, page.index(), std::move(keyDefinition));
     tree.intialize();
 
     RowSchema schema;
