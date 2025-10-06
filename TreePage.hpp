@@ -52,6 +52,7 @@ public:
 
     RowId cellRowId(Index index);
     void setCellRowId(Index index, RowId rowId);
+    void setCellKey(Index index, void *key, size_t keySize);
 
     void *insertCell(void *key, Size keySize, Size dataSize, Index index);
 
@@ -71,10 +72,14 @@ public:
     void leafRemove(RowId rowId);
 
     bool indirectCanAdd();
-    void indirectAdd(RowId rowId, TreePage &childPage);
+    void indirectAdd(void *key, size_t keySize, TreePage &childPage);
     Page::Index indirectPageIndex(Index index);
     Page::Index indirectLookup(void *key);
     RowId indirectRectifyDeficientChild(TreePage &childPage, RowId removedRowId);
+    void indirectRotateRight(TreePage &leftChild, TreePage &rightChild, Index index);
+    void indirectRotateLeft(TreePage &leftChild, TreePage &rightChild, Index index);
+    void indirectMergeChildren(TreePage &leftChild, TreePage &rightChild, Index index);
+    void indirectPushHead(void *oldHeadKey, Size oldHeadKeySize, TreePage &childPage);
 
     template <typename F> void print(const std::string &prefix, F printCell);
 

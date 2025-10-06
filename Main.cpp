@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     };
 
     srand(12345);
-    for(int i=0; i<32; i++) {
+    for(int i=0; i<64; i++) {
         uint32_t key = rand() % 1000;
         RowWriter writer(schema);
         std::stringstream ss;
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     }
 
     srand(12345);
-    for(int i=0; i<32; i++) {
+    for(int i=0; i<64; i++) {
         uint32_t key = rand() % 1000;
         tree.remove(key);
         tree.print(printCell);

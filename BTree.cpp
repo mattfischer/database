@@ -49,23 +49,23 @@ void *BTree::add(RowId rowId, TreePage::Size size)
             TreePage indirectPage(mPageSet.addPage(), *mKeyDefinition);
             indirectPage.initialize(TreePage::Type::Indirect);
 
-            indirectPage.indirectAdd(TreePage::kInvalidRowId, leftSplitPage);
-            indirectPage.indirectAdd(splitRow, rightSplitPage);
+            indirectPage.indirectAdd(nullptr, 0, leftSplitPage);
+            indirectPage.indirectAdd(&splitRow, sizeof(RowId), rightSplitPage);
 
             mRootIndex = indirectPage.page().index();
             break;
         } else {
             TreePage indirectPage(mPageSet.page(parentPageIndex), *mKeyDefinition);
             if(indirectPage.indirectCanAdd()) {
-                indirectPage.indirectAdd(splitRow, rightSplitPage);
+                indirectPage.indirectAdd(&splitRow, sizeof(RowId), rightSplitPage);
                 break;
             } else {
                 auto [newIndirectPage, indirectSplitRow] = indirectPage.split();
 
                 if(indirectSplitRow <= splitRow) {
-                    newIndirectPage.indirectAdd(splitRow, rightSplitPage);
+                    newIndirectPage.indirectAdd(&splitRow, sizeof(RowId), rightSplitPage);
                 } else {
-                    indirectPage.indirectAdd(splitRow, rightSplitPage);
+                    indirectPage.indirectAdd(&splitRow, sizeof(RowId), rightSplitPage);
                 }
 
                 parentPageIndex = indirectPage.parent();
