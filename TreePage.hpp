@@ -44,9 +44,11 @@ public:
 
     void *cellKey(Index index);
     Size cellKeySize(Index index);
+    Size cellTotalKeySize(Index index);
 
     void *cellData(Index index);
     Size cellDataSize(Index index);
+    Size cellTotalDataSize(Index index);
 
     RowId cellRowId(Index index);
     void setCellRowId(Index index, RowId rowId);

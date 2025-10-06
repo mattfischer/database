@@ -76,6 +76,16 @@ TreePage::Size TreePage::cellKeySize(Index index)
     return keySize;
 }
 
+TreePage::Size TreePage::cellTotalKeySize(Index index)
+{
+    TreePage::Size keySize = mKeyDefinition.fixedSize();
+    if(keySize == 0) {
+        keySize = sizeof(uint16_t) + *reinterpret_cast<uint16_t*>(mPage.data(cellOffset(index)));
+    }
+
+    return keySize;
+}
+
 void *TreePage::cellData(Index index)
 {
     if(index >= header().numCells) {
@@ -88,14 +98,27 @@ void *TreePage::cellData(Index index)
 TreePage::Size TreePage::cellDataSize(Index index)
 {
     uint16_t offset = cellOffset(index);
-    TreePage::Size keySize = mKeyDefinition.fixedSize();
-    if(keySize == 0) {
-        keySize = sizeof(uint16_t) + *reinterpret_cast<uint16_t*>(mPage.data(offset));
-    }
+    TreePage::Size keySize = cellTotalKeySize(index);
 
     switch(type()) {
         case Type::Leaf:
             return *reinterpret_cast<uint16_t*>(mPage.data(offset + keySize));
+        
+        case Type::Indirect:
+            return sizeof(Page::Index);
+    }
+
+    return 0;
+}
+
+TreePage::Size TreePage::cellTotalDataSize(Index index)
+{
+    uint16_t offset = cellOffset(index);
+    TreePage::Size keySize = cellTotalKeySize(index);
+
+    switch(type()) {
+        case Type::Leaf:
+            return sizeof(uint16_t) + *reinterpret_cast<uint16_t*>(mPage.data(offset + keySize));
         
         case Type::Indirect:
             return sizeof(Page::Index);
@@ -362,24 +385,7 @@ void *TreePage::cell(Index index)
 
 TreePage::Size TreePage::cellSize(Index index)
 {
-    uint16_t offset = cellOffset(index);
-    TreePage::Size keySize = mKeyDefinition.fixedSize();
-    if(keySize == 0) {
-        keySize = sizeof(uint16_t) + *reinterpret_cast<uint16_t*>(mPage.data(offset));
-    }
-
-    TreePage::Size dataSize;
-    switch(type()) {
-        case Type::Leaf:
-            dataSize = sizeof(uint16_t) + *reinterpret_cast<uint16_t*>(mPage.data(offset + keySize));
-            break;
-
-        case Type::Indirect:
-            dataSize = sizeof(Page::Index);
-            break;
-    }
-
-    return keySize + dataSize;
+    return cellTotalKeySize(index) + cellTotalDataSize(index);
 }
 
 uint16_t TreePage::cellOffset(Index index)
@@ -400,10 +406,7 @@ uint16_t TreePage::cellKeyOffset(Index index)
 uint16_t TreePage::cellDataOffset(Index index)
 {
     uint16_t offset = cellOffset(index);
-    TreePage::Size keySize = mKeyDefinition.fixedSize();
-    if(keySize == 0) {
-        keySize = sizeof(uint16_t) + *reinterpret_cast<uint16_t*>(mPage.data(offset));
-    }
+    TreePage::Size keySize = cellTotalKeySize(index);
 
     return offset + keySize + ((type() == Type::Leaf) ? sizeof(uint16_t) : 0);
 }
