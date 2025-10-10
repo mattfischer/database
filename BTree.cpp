@@ -49,8 +49,8 @@ void *BTree::add(RowId rowId, TreePage::Size size)
             TreePage indirectPage(mPageSet.addPage(), *mKeyDefinition);
             indirectPage.initialize(TreePage::Type::Indirect);
 
-            indirectPage.indirectAdd(nullptr, 0, leftSplitPage);
-            indirectPage.indirectAdd(&splitRow, sizeof(RowId), rightSplitPage);
+            indirectPage.indirectPushTail(nullptr, 0, leftSplitPage);
+            indirectPage.indirectPushTail(&splitRow, sizeof(RowId), rightSplitPage);
 
             mRootIndex = indirectPage.page().index();
             break;

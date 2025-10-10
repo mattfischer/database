@@ -59,8 +59,6 @@ public:
     void removeCell(Index index);
     void removeCells(Index begin, Index end);
 
-    void copyCells(TreePage &page, Index begin, Index end);
-
     std::tuple<TreePage, RowId> split();
 
     bool isDeficient();
@@ -80,6 +78,9 @@ public:
     void indirectRotateLeft(TreePage &leftChild, TreePage &rightChild, Index index);
     void indirectMergeChildren(TreePage &leftChild, TreePage &rightChild, Index index);
     void indirectPushHead(void *oldHeadKey, Size oldHeadKeySize, TreePage &childPage);
+    void indirectPushTail(void *key, Size keySize, TreePage &childPage);
+    void indirectPopHead();
+    void indirectPopTail();
 
     template <typename F> void print(const std::string &prefix, F printCell);
 

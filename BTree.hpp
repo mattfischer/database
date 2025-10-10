@@ -29,7 +29,7 @@ public:
 
     void *lookup(void *key);
     void *add(RowId rowId, TreePage::Size size);
-    void remove(RowId);
+    void remove(RowId rowId);
 
     template <typename F> void print(F printCell) {
         Page &page = mPageSet.page(mRootIndex);
