@@ -9,9 +9,9 @@ BTree::BTree(PageSet &pageSet, Page::Index rootIndex, std::unique_ptr<TreePage::
     mRootIndex = rootIndex;
 }
 
-void BTree::intialize()
+void BTree::initialize()
 {
-    TreePage leafPage(mPageSet.page(mRootIndex), *mKeyDefinition);
+    TreePage leafPage = getPage(mRootIndex);
     leafPage.initialize(TreePage::Type::Leaf);
 }
 
@@ -44,8 +44,8 @@ void *BTree::add(void *key, TreePage::Size keySize, TreePage::Size dataSize)
     Page::Index rightSplitIndex = newLeafPage.page().index();
 
     while(true) {
-        TreePage leftSplitPage(mPageSet.page(leftSplitIndex), *mKeyDefinition);
-        TreePage rightSplitPage(mPageSet.page(rightSplitIndex), *mKeyDefinition);
+        TreePage leftSplitPage = getPage(leftSplitIndex);
+        TreePage rightSplitPage = getPage(rightSplitIndex);
 
         if(parentPageIndex == Page::kInvalidIndex) {
             TreePage indirectPage(mPageSet.addPage(), *mKeyDefinition);
@@ -57,8 +57,8 @@ void *BTree::add(void *key, TreePage::Size keySize, TreePage::Size dataSize)
             mRootIndex = indirectPage.page().index();
             break;
         } else {
-            TreePage indirectPage(mPageSet.page(parentPageIndex), *mKeyDefinition);
-            if(indirectPage.indirectCanAdd()) {
+            TreePage indirectPage = getPage(parentPageIndex);
+            if(indirectPage.indirectCanAdd(sizeof(RowId))) {
                 indirectPage.indirectAdd(&splitRow, sizeof(RowId), rightSplitPage);
                 break;
             } else {
@@ -91,7 +91,7 @@ void BTree::remove(void *key)
     Page::Index index = leafPage.page().index();
     RowId removedRowId = *reinterpret_cast<RowId*>(key);
     while(true) {
-        TreePage page(mPageSet.page(index), *mKeyDefinition);
+        TreePage page = getPage(index);
         if(!page.isDeficient()) {
             break;
         }
@@ -100,11 +100,11 @@ void BTree::remove(void *key)
             if(page.type() == TreePage::Indirect && page.numCells() == 1) {
                 mRootIndex = page.indirectPageIndex(0);
                 mPageSet.deletePage(page.page());
-                TreePage(mPageSet.page(mRootIndex), *mKeyDefinition).setParent(Page::kInvalidIndex);
+                getPage(mRootIndex).setParent(Page::kInvalidIndex);
             }
             break;
         }
-        TreePage parentPage(mPageSet.page(page.parent()), *mKeyDefinition);
+        TreePage parentPage = getPage(page.parent());
         removedRowId = parentPage.indirectRectifyDeficientChild(page, &removedRowId);
 
         index = parentPage.page().index();
@@ -115,7 +115,7 @@ TreePage BTree::findLeaf(void *key)
 {
     Page::Index index = mRootIndex;
     while(true) {
-        TreePage page(mPageSet.page(index), *mKeyDefinition);
+        TreePage page = getPage(index);
         if(page.type() == TreePage::Type::Leaf) {
             break;
         }
@@ -123,5 +123,10 @@ TreePage BTree::findLeaf(void *key)
         index = page.indirectLookup(key);
     }
 
+    return getPage(index);
+}
+
+TreePage BTree::getPage(Page::Index index)
+{
     return TreePage(mPageSet.page(index), *mKeyDefinition);
 }

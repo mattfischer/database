@@ -25,7 +25,7 @@ public:
 
     BTree(PageSet &pageSet, Page::Index rootIndex, std::unique_ptr<TreePage::KeyDefinition> keyDefinition);
 
-    void intialize();
+    void initialize();
 
     void *lookup(void *key);
     void *add(void *key, TreePage::Size keySize, TreePage::Size size);
@@ -42,6 +42,7 @@ private:
     std::unique_ptr<TreePage::KeyDefinition> mKeyDefinition;
 
     TreePage findLeaf(void *key);
+    TreePage getPage(Page::Index index);
 };
 
 #endif

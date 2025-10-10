@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     std::unique_ptr<TreePage::KeyDefinition> keyDefinition = std::make_unique<BTree::RowIdKeyDefinition>();
 
     BTree tree(pageSet, page.index(), std::move(keyDefinition));
-    tree.intialize();
+    tree.initialize();
 
     RowSchema schema;
     schema.fields.push_back({RowSchema::Field::String, "name"});

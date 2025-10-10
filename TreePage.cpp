@@ -221,7 +221,7 @@ TreePage TreePage::split(Index index)
 
     for(Index i=begin; i<end; i++) {
         if(newPage.type() == Type::Indirect) {
-            TreePage movedChild(pageSet().page(indirectPageIndex(i)), mKeyDefinition);
+            TreePage movedChild = getPage(indirectPageIndex(i));
             newPage.indirectPushTail(cellKey(i), cellKeySize(i), movedChild);
         } else {
             Size dataSize = cellDataSize(i);
@@ -244,15 +244,15 @@ bool TreePage::isDeficient()
     return freeSpace() > page().size() / 2;
 }
 
-bool TreePage::canSupplyItem()
+bool TreePage::canSupplyItem(Index index)
 {
-    return freeSpace() + cellSize(0) < page().size() / 2;
+    return freeSpace() + cellSize(index) + sizeof(uint16_t) < page().size() / 2;
 }
 
 void *TreePage::leafLookup(void *key)
 {
     Index index = search(key);
-    if(index < numCells() && mKeyDefinition.compare(cellKey(index), key) == 0) {
+    if(index < numCells() && keyCompare(cellKey(index), key) == 0) {
         return cellData(index);
     } else {
         return nullptr;
@@ -267,7 +267,7 @@ bool TreePage::leafCanAdd(size_t keySize, size_t dataSize)
 void *TreePage::leafAdd(void *key, size_t keySize, size_t dataSize)
 {
     Index index = search(key);
-    if(index < numCells() && mKeyDefinition.compare(cellKey(index), key) == 0) {
+    if(index < numCells() && keyCompare(cellKey(index), key) == 0) {
         return nullptr;
     } else {
         return insertCell(key, keySize, dataSize, index);
@@ -277,13 +277,13 @@ void *TreePage::leafAdd(void *key, size_t keySize, size_t dataSize)
 void TreePage::leafRemove(void *key)
 {
     Index index = search(key);
-    if(index < numCells() && mKeyDefinition.compare(cellKey(index), key) == 0) {
+    if(index < numCells() && keyCompare(cellKey(index), key) == 0) {
         removeCell(index);
     }
 }
-bool TreePage::indirectCanAdd()
+bool TreePage::indirectCanAdd(size_t keySize)
 {
-    return canAllocateCell(sizeof(RowId), sizeof(Page::Index));
+    return canAllocateCell(keySize, sizeof(Page::Index));
 }
 
 void TreePage::indirectAdd(void *key, size_t keySize, TreePage &childPage)
@@ -294,7 +294,7 @@ void TreePage::indirectAdd(void *key, size_t keySize, TreePage &childPage)
         childPage.setParent(pageIndex());
     } else {
         Index index = search(key);
-        if(index < numCells() && mKeyDefinition.compare(cellKey(index), key) == 0) {
+        if(index < numCells() && keyCompare(cellKey(index), key) == 0) {
             return;
         } else {
             Page::Index *indexData = reinterpret_cast<Page::Index*>(TreePage::insertCell(key, keySize, sizeof(Page::Index), index));
@@ -307,7 +307,7 @@ void TreePage::indirectAdd(void *key, size_t keySize, TreePage &childPage)
 Page::Index TreePage::indirectLookup(void *key)
 {
     Index index = search(key);
-    if(index == numCells() || mKeyDefinition.compare(cellKey(index), key) > 0) {
+    if(index == numCells() || keyCompare(cellKey(index), key) > 0) {
         index -= 1;
     }
 
@@ -325,13 +325,13 @@ TreePage::RowId TreePage::indirectRectifyDeficientChild(TreePage &childPage, voi
     Index childIndex = search(removedKey);
     RowId removedRowId;
 
-    if(childIndex == numCells() || mKeyDefinition.compare(cellKey(childIndex), removedKey) > 0) {
+    if(childIndex == numCells() || keyCompare(cellKey(childIndex), removedKey) > 0) {
         childIndex -= 1;
     }
 
     if(childIndex < numCells() - 1) {
-        TreePage rightNeighbor(pageSet().page(indirectPageIndex(childIndex + 1)), mKeyDefinition);
-        if(rightNeighbor.canSupplyItem()) {
+        TreePage rightNeighbor = getPage(indirectPageIndex(childIndex + 1));
+        if(rightNeighbor.canSupplyItem(0)) {
             indirectRotateLeft(childPage, rightNeighbor, childIndex);
             return TreePage::kInvalidRowId;
         } else {
@@ -340,8 +340,8 @@ TreePage::RowId TreePage::indirectRectifyDeficientChild(TreePage &childPage, voi
             return removedRowId;
         }
     } else {
-        TreePage leftNeighbor(pageSet().page(indirectPageIndex(childIndex - 1)), mKeyDefinition);
-        if(leftNeighbor.canSupplyItem()) {
+        TreePage leftNeighbor = getPage(indirectPageIndex(childIndex - 1));
+        if(leftNeighbor.canSupplyItem(leftNeighbor.numCells() - 1)) {
             indirectRotateRight(leftNeighbor, childPage, childIndex);
             return TreePage::kInvalidRowId;
         } else {
@@ -355,7 +355,7 @@ TreePage::RowId TreePage::indirectRectifyDeficientChild(TreePage &childPage, voi
 void TreePage::indirectRotateRight(TreePage &leftChild, TreePage &rightChild, Index index)
 {
     if(rightChild.type() == TreePage::Type::Indirect) {
-        TreePage movedChild(pageSet().page(leftChild.indirectPageIndex(leftChild.numCells() - 1)), mKeyDefinition);
+        TreePage movedChild = getPage(leftChild.indirectPageIndex(leftChild.numCells() - 1));
         rightChild.indirectPushHead(cellKey(index), cellKeySize(index), movedChild);
         setCellKey(index, leftChild.cellKey(leftChild.numCells() - 1), leftChild.cellKeySize(leftChild.numCells() - 1));
         leftChild.indirectPopTail();
@@ -372,7 +372,7 @@ void TreePage::indirectRotateRight(TreePage &leftChild, TreePage &rightChild, In
 void TreePage::indirectRotateLeft(TreePage &leftChild, TreePage &rightChild, Index index)
 {
     if(rightChild.type() == TreePage::Type::Indirect) {
-        TreePage movedChild(pageSet().page(rightChild.indirectPageIndex(0)), mKeyDefinition);
+        TreePage movedChild = getPage(rightChild.indirectPageIndex(0));
         leftChild.indirectPushTail(cellKey(index + 1), cellKeySize(index + 1), movedChild);
         setCellKey(index + 1, rightChild.cellKey(1), rightChild.cellKeySize(1));
         rightChild.indirectPopHead();
@@ -390,7 +390,7 @@ void TreePage::indirectMergeChildren(TreePage &leftChild, TreePage &rightChild, 
 {
     for(Index i=0; i<rightChild.numCells(); i++) {
         if(leftChild.type() == TreePage::Type::Indirect) {
-            TreePage movedChild(pageSet().page(rightChild.indirectPageIndex(i)), mKeyDefinition);
+            TreePage movedChild = getPage(rightChild.indirectPageIndex(i));
             if(i == 0) {
                 leftChild.indirectPushTail(cellKey(index), cellKeySize(index), movedChild);
             } else {
@@ -560,7 +560,7 @@ TreePage::Index TreePage::search(void *key)
                 return end;
             } else {
                 void *startKey = cellKey(start);
-                int cmp = mKeyDefinition.compare(key, startKey);
+                int cmp = keyCompare(key, startKey);
                 if(cmp <= 0) {
                     return start;
                 } else {
@@ -571,7 +571,7 @@ TreePage::Index TreePage::search(void *key)
 
         Index mid = (start + end) / 2;
         void *midKey = cellKey(mid);
-        int cmp = mKeyDefinition.compare(key, midKey);
+        int cmp = keyCompare(key, midKey);
         if(cmp == 0) {
             return mid;
         }
@@ -582,6 +582,16 @@ TreePage::Index TreePage::search(void *key)
             start = mid;
         }
     }
+}
+
+int TreePage::keyCompare(void *a, void *b)
+{
+    return mKeyDefinition.compare(a, b);
+}
+
+TreePage TreePage::getPage(Page::Index index)
+{
+    return TreePage(pageSet().page(index), mKeyDefinition);
 }
 
 void TreePage::defragPage()

@@ -62,14 +62,14 @@ public:
     TreePage split(Index index);
 
     bool isDeficient();
-    bool canSupplyItem();
+    bool canSupplyItem(Index index);
 
     void *leafLookup(void *key);
     bool leafCanAdd(size_t keySize, size_t dataSize);
     void *leafAdd(void *key, size_t keySize, size_t dataSize);
     void leafRemove(void *key);
 
-    bool indirectCanAdd();
+    bool indirectCanAdd(size_t keySize);
     void indirectAdd(void *key, size_t keySize, TreePage &childPage);
     Page::Index indirectPageIndex(Index index);
     Page::Index indirectLookup(void *key);
@@ -108,6 +108,9 @@ private:
     Index search(void *key);
 
     void defragPage();
+
+    int keyCompare(void *a, void *b);
+    TreePage getPage(Page::Index index);
 
     PageSet &pageSet();
 
