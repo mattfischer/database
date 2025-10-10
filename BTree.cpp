@@ -21,20 +21,22 @@ void *BTree::lookup(void *key)
     return leafPage.leafLookup(key);
 }
 
-void *BTree::add(RowId rowId, TreePage::Size size)
+void *BTree::add(void *key, TreePage::Size keySize, TreePage::Size dataSize)
 {
-    TreePage leafPage = findLeaf(&rowId);
-    if(leafPage.leafCanAdd(sizeof(RowId), size)) {
-        return leafPage.leafAdd(&rowId, sizeof(RowId), size);
+    TreePage leafPage = findLeaf(key);
+    if(leafPage.leafCanAdd(keySize, dataSize)) {
+        return leafPage.leafAdd(key, keySize, dataSize);
     }
     
-    auto [newLeafPage, splitRow] = leafPage.split();
+    TreePage::Index splitIndex = leafPage.numCells() / 2;
+    RowId splitRow = leafPage.cellRowId(splitIndex);
+    TreePage newLeafPage = leafPage.split(splitIndex);
 
     void *ret;
-    if(splitRow <= rowId) {
-        ret = newLeafPage.leafAdd(&rowId, sizeof(RowId), size);
+    if(mKeyDefinition->compare(&splitRow, key) <= 0) {
+        ret = newLeafPage.leafAdd(key, keySize, dataSize);
     } else {
-        ret = leafPage.leafAdd(&rowId, sizeof(RowId), size);
+        ret = leafPage.leafAdd(key, keySize, dataSize);
     }
 
     Page::Index parentPageIndex = leafPage.parent();
@@ -60,7 +62,9 @@ void *BTree::add(RowId rowId, TreePage::Size size)
                 indirectPage.indirectAdd(&splitRow, sizeof(RowId), rightSplitPage);
                 break;
             } else {
-                auto [newIndirectPage, indirectSplitRow] = indirectPage.split();
+                splitIndex = indirectPage.numCells() / 2;
+                RowId indirectSplitRow = indirectPage.cellRowId(splitIndex);
+                TreePage newIndirectPage  = indirectPage.split(splitIndex);
 
                 if(indirectSplitRow <= splitRow) {
                     newIndirectPage.indirectAdd(&splitRow, sizeof(RowId), rightSplitPage);
@@ -79,13 +83,13 @@ void *BTree::add(RowId rowId, TreePage::Size size)
     return ret;
 }
 
-void BTree::remove(RowId rowId)
+void BTree::remove(void *key)
 {
-    TreePage leafPage = findLeaf(&rowId);
-    leafPage.leafRemove(rowId);
+    TreePage leafPage = findLeaf(key);
+    leafPage.leafRemove(key);
 
     Page::Index index = leafPage.page().index();
-    RowId removedRowId = rowId;
+    RowId removedRowId = *reinterpret_cast<RowId*>(key);
     while(true) {
         TreePage page(mPageSet.page(index), *mKeyDefinition);
         if(!page.isDeficient()) {
@@ -101,7 +105,7 @@ void BTree::remove(RowId rowId)
             break;
         }
         TreePage parentPage(mPageSet.page(page.parent()), *mKeyDefinition);
-        removedRowId = parentPage.indirectRectifyDeficientChild(page, removedRowId);
+        removedRowId = parentPage.indirectRectifyDeficientChild(page, &removedRowId);
 
         index = parentPage.page().index();
     }

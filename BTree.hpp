@@ -28,8 +28,8 @@ public:
     void intialize();
 
     void *lookup(void *key);
-    void *add(RowId rowId, TreePage::Size size);
-    void remove(RowId rowId);
+    void *add(void *key, TreePage::Size keySize, TreePage::Size size);
+    void remove(void *key);
 
     template <typename F> void print(F printCell) {
         Page &page = mPageSet.page(mRootIndex);

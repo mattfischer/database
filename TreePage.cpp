@@ -210,16 +210,15 @@ void TreePage::removeCells(Index begin, Index end)
     head.numCells -= (end - begin);
 }
 
-std::tuple<TreePage, TreePage::RowId> TreePage::split()
+TreePage TreePage::split(Index index)
 {
     TreePage newPage(pageSet().addPage(), mKeyDefinition);
     newPage.initialize(type());
     newPage.setParent(parent());
 
-    Index begin = numCells() / 2;
+    Index begin = index;
     Index end = numCells();
 
-    RowId splitRow = cellRowId(begin);
     for(Index i=begin; i<end; i++) {
         if(newPage.type() == Type::Indirect) {
             TreePage movedChild(pageSet().page(indirectPageIndex(i)), mKeyDefinition);
@@ -237,7 +236,7 @@ std::tuple<TreePage, TreePage::RowId> TreePage::split()
 
     removeCells(begin, end);
 
-    return {newPage, splitRow};
+    return newPage;
 }
 
 bool TreePage::isDeficient()
@@ -275,10 +274,10 @@ void *TreePage::leafAdd(void *key, size_t keySize, size_t dataSize)
     }
 }
 
-void TreePage::leafRemove(RowId rowId)
+void TreePage::leafRemove(void *key)
 {
-    Index index = search(&rowId);
-    if(index < numCells() && cellRowId(index) == rowId) {
+    Index index = search(key);
+    if(index < numCells() && mKeyDefinition.compare(cellKey(index), key) == 0) {
         removeCell(index);
     }
 }
@@ -321,10 +320,12 @@ Page::Index TreePage::indirectPageIndex(Index index)
     return *indexData;
 }
 
-TreePage::RowId TreePage::indirectRectifyDeficientChild(TreePage &childPage, RowId removedRowId)
+TreePage::RowId TreePage::indirectRectifyDeficientChild(TreePage &childPage, void *removedKey)
 {
-    Index childIndex = search(&removedRowId);
-    if(childIndex == numCells() || cellRowId(childIndex) > removedRowId) {
+    Index childIndex = search(removedKey);
+    RowId removedRowId;
+
+    if(childIndex == numCells() || mKeyDefinition.compare(cellKey(childIndex), removedKey) > 0) {
         childIndex -= 1;
     }
 

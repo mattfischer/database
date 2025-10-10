@@ -59,7 +59,7 @@ public:
     void removeCell(Index index);
     void removeCells(Index begin, Index end);
 
-    std::tuple<TreePage, RowId> split();
+    TreePage split(Index index);
 
     bool isDeficient();
     bool canSupplyItem();
@@ -67,13 +67,13 @@ public:
     void *leafLookup(void *key);
     bool leafCanAdd(size_t keySize, size_t dataSize);
     void *leafAdd(void *key, size_t keySize, size_t dataSize);
-    void leafRemove(RowId rowId);
+    void leafRemove(void *key);
 
     bool indirectCanAdd();
     void indirectAdd(void *key, size_t keySize, TreePage &childPage);
     Page::Index indirectPageIndex(Index index);
     Page::Index indirectLookup(void *key);
-    RowId indirectRectifyDeficientChild(TreePage &childPage, RowId removedRowId);
+    RowId indirectRectifyDeficientChild(TreePage &childPage, void *removedKey);
     void indirectRotateRight(TreePage &leftChild, TreePage &rightChild, Index index);
     void indirectRotateLeft(TreePage &leftChild, TreePage &rightChild, Index index);
     void indirectMergeChildren(TreePage &leftChild, TreePage &rightChild, Index index);

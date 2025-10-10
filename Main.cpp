@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
         field.stringValue = ss.str();
         writer.setField(0, field);
 
-        void *data = tree.add(key, writer.dataSize());
+        void *data = tree.add(&key, sizeof(key), writer.dataSize());
         writer.write(data);
 
         tree.print(printCell);
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
     srand(12345);
     for(int i=0; i<64; i++) {
         uint32_t key = rand() % 1000;
-        tree.remove(key);
+        tree.remove(&key);
         tree.print(printCell);
         std::cout << "----------" << std::endl;
     }
