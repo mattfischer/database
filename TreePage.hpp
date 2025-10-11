@@ -15,16 +15,38 @@ public:
         Indirect
     };
 
+    struct Key {
+        Key() = default;
+        Key(void *d, Size s) : data(d), size(s) {}
+
+        void *data = nullptr;
+        Size size = 0;
+    };
+
     class KeyDefinition {
     public:
         virtual ~KeyDefinition() = default;
 
         virtual Size fixedSize() = 0;
-        virtual int compare(void *a, void *b) = 0;
-        virtual void print(void *key) = 0;
+        virtual int compare(Key a, Key b) = 0;
+        virtual void print(Key key) = 0;
     };
 
     struct KeyValue {
+        KeyValue() = default;
+        KeyValue(Key key) {
+            data.resize(key.size);
+            std::memcpy(data.data(), key.data, key.size);
+        }
+
+        operator Key() {
+            Key key;
+            key.data = data.data();
+            key.size = data.size();
+
+            return key;
+        }
+
         std::vector<uint8_t> data;
     };
 
@@ -44,17 +66,16 @@ public:
 
     Index numCells();
 
-    void *cellKey(Index index);
-    Size cellKeySize(Index index);
+    Key cellKey(Index index);
     Size cellTotalKeySize(Index index);
 
     void *cellData(Index index);
     Size cellDataSize(Index index);
     Size cellTotalDataSize(Index index);
 
-    void setCellKey(Index index, void *key, size_t keySize);
+    void setCellKey(Index index, Key key);
 
-    void *insertCell(void *key, Size keySize, Size dataSize, Index index);
+    void *insertCell(Key key, Size dataSize, Index index);
 
     void removeCell(Index index);
     void removeCells(Index begin, Index end);
@@ -64,21 +85,21 @@ public:
     bool isDeficient();
     bool canSupplyItem(Index index);
 
-    void *leafLookup(void *key);
+    void *leafLookup(Key key);
     bool leafCanAdd(size_t keySize, size_t dataSize);
-    void *leafAdd(void *key, size_t keySize, size_t dataSize);
-    void leafRemove(void *key);
+    void *leafAdd(Key key, size_t dataSize);
+    void leafRemove(Key key);
 
     bool indirectCanAdd(size_t keySize);
-    void indirectAdd(void *key, size_t keySize, TreePage &childPage);
+    void indirectAdd(Key key, TreePage &childPage);
     Page::Index indirectPageIndex(Index index);
-    Page::Index indirectLookup(void *key);
-    KeyValue indirectRectifyDeficientChild(TreePage &childPage, void *removedKey);
+    Page::Index indirectLookup(Key key);
+    KeyValue indirectRectifyDeficientChild(TreePage &childPage, Key removedKey);
     void indirectRotateRight(TreePage &leftChild, TreePage &rightChild, Index index);
     void indirectRotateLeft(TreePage &leftChild, TreePage &rightChild, Index index);
     void indirectMergeChildren(TreePage &leftChild, TreePage &rightChild, Index index);
-    void indirectPushHead(void *oldHeadKey, Size oldHeadKeySize, TreePage &childPage);
-    void indirectPushTail(void *key, Size keySize, TreePage &childPage);
+    void indirectPushHead(Key oldHeadKey, TreePage &childPage);
+    void indirectPushTail(Key key, TreePage &childPage);
     void indirectPopHead();
     void indirectPopTail();
 
@@ -102,14 +123,14 @@ private:
     uint16_t cellKeyOffset(Index index); 
     uint16_t cellDataOffset(Index index);
 
-    uint16_t allocateCell(void *key, Size keySize, Size dataSize);
+    uint16_t allocateCell(Key key, Size dataSize);
     bool canAllocateCell(Size keySize, Size dataSize);
 
-    Index search(void *key);
+    Index search(Key key);
 
     void defragPage();
 
-    int keyCompare(void *a, void *b);
+    int keyCompare(Key a, Key b);
     TreePage getPage(Page::Index index);
 
     PageSet &pageSet();
