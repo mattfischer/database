@@ -29,11 +29,13 @@ void *BTree::add(void *key, TreePage::Size keySize, TreePage::Size dataSize)
     }
     
     TreePage::Index splitIndex = leafPage.numCells() / 2;
-    RowId splitRow = leafPage.cellRowId(splitIndex);
+    TreePage::KeyValue splitKey;
+    splitKey.data.resize(leafPage.cellKeySize(splitIndex));
+    std::memcpy(splitKey.data.data(), leafPage.cellKey(splitIndex), splitKey.data.size());
     TreePage newLeafPage = leafPage.split(splitIndex);
 
     void *ret;
-    if(mKeyDefinition->compare(&splitRow, key) <= 0) {
+    if(mKeyDefinition->compare(splitKey.data.data(), key) <= 0) {
         ret = newLeafPage.leafAdd(key, keySize, dataSize);
     } else {
         ret = leafPage.leafAdd(key, keySize, dataSize);
@@ -52,30 +54,32 @@ void *BTree::add(void *key, TreePage::Size keySize, TreePage::Size dataSize)
             indirectPage.initialize(TreePage::Type::Indirect);
 
             indirectPage.indirectPushTail(nullptr, 0, leftSplitPage);
-            indirectPage.indirectPushTail(&splitRow, sizeof(RowId), rightSplitPage);
+            indirectPage.indirectPushTail(splitKey.data.data(), splitKey.data.size(), rightSplitPage);
 
             mRootIndex = indirectPage.page().index();
             break;
         } else {
             TreePage indirectPage = getPage(parentPageIndex);
             if(indirectPage.indirectCanAdd(sizeof(RowId))) {
-                indirectPage.indirectAdd(&splitRow, sizeof(RowId), rightSplitPage);
+                indirectPage.indirectAdd(splitKey.data.data(), splitKey.data.size(), rightSplitPage);
                 break;
             } else {
                 splitIndex = indirectPage.numCells() / 2;
-                RowId indirectSplitRow = indirectPage.cellRowId(splitIndex);
+                TreePage::KeyValue indirectSplitKey;
+                indirectSplitKey.data.resize(indirectPage.cellKeySize(splitIndex));
+                std::memcpy(indirectSplitKey.data.data(), indirectPage.cellKey(splitIndex), indirectSplitKey.data.size());
                 TreePage newIndirectPage  = indirectPage.split(splitIndex);
 
-                if(indirectSplitRow <= splitRow) {
-                    newIndirectPage.indirectAdd(&splitRow, sizeof(RowId), rightSplitPage);
+                if(mKeyDefinition->compare(indirectSplitKey.data.data(), splitKey.data.data()) <= 0) {
+                    newIndirectPage.indirectAdd(splitKey.data.data(), splitKey.data.size(), rightSplitPage);
                 } else {
-                    indirectPage.indirectAdd(&splitRow, sizeof(RowId), rightSplitPage);
+                    indirectPage.indirectAdd(splitKey.data.data(), splitKey.data.size(), rightSplitPage);
                 }
 
                 parentPageIndex = indirectPage.parent();
                 leftSplitIndex = indirectPage.page().index();
                 rightSplitIndex = newIndirectPage.page().index();
-                splitRow = indirectSplitRow;
+                splitKey = std::move(indirectSplitKey);
             }
         }
     }
@@ -83,12 +87,16 @@ void *BTree::add(void *key, TreePage::Size keySize, TreePage::Size dataSize)
     return ret;
 }
 
-void BTree::remove(void *key)
+void BTree::remove(void *key, size_t keySize)
 {
     TreePage leafPage = findLeaf(key);
     leafPage.leafRemove(key);
 
     Page::Index index = leafPage.page().index();
+    TreePage::KeyValue removedKey;
+    removedKey.data.resize(keySize);
+    std::memcpy(removedKey.data.data(), key, keySize);
+
     RowId removedRowId = *reinterpret_cast<RowId*>(key);
     while(true) {
         TreePage page = getPage(index);
@@ -105,7 +113,7 @@ void BTree::remove(void *key)
             break;
         }
         TreePage parentPage = getPage(page.parent());
-        removedRowId = parentPage.indirectRectifyDeficientChild(page, &removedRowId);
+        removedKey = parentPage.indirectRectifyDeficientChild(page, removedKey.data.data());
 
         index = parentPage.page().index();
     }

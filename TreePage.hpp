@@ -7,9 +7,6 @@
 
 class TreePage {
 public:
-    typedef uint32_t RowId;
-    static const RowId kInvalidRowId = UINT32_MAX;
-
     typedef uint16_t Index;
     typedef uint16_t Size;
 
@@ -24,6 +21,11 @@ public:
 
         virtual Size fixedSize() = 0;
         virtual int compare(void *a, void *b) = 0;
+        virtual void print(void *key) = 0;
+    };
+
+    struct KeyValue {
+        std::vector<uint8_t> data;
     };
 
     TreePage(Page &page, KeyDefinition &keyDefinition);
@@ -50,8 +52,6 @@ public:
     Size cellDataSize(Index index);
     Size cellTotalDataSize(Index index);
 
-    RowId cellRowId(Index index);
-    void setCellRowId(Index index, RowId rowId);
     void setCellKey(Index index, void *key, size_t keySize);
 
     void *insertCell(void *key, Size keySize, Size dataSize, Index index);
@@ -73,7 +73,7 @@ public:
     void indirectAdd(void *key, size_t keySize, TreePage &childPage);
     Page::Index indirectPageIndex(Index index);
     Page::Index indirectLookup(void *key);
-    RowId indirectRectifyDeficientChild(TreePage &childPage, void *removedKey);
+    KeyValue indirectRectifyDeficientChild(TreePage &childPage, void *removedKey);
     void indirectRotateRight(TreePage &leftChild, TreePage &rightChild, Index index);
     void indirectRotateLeft(TreePage &leftChild, TreePage &rightChild, Index index);
     void indirectMergeChildren(TreePage &leftChild, TreePage &rightChild, Index index);
@@ -129,7 +129,9 @@ template <typename F> void TreePage::print(const std::string &prefix, F printCel
             std::cout << std::endl;
 
             for(Index i=0; i<numCells(); i++) {
-                std::cout << prefix << cellRowId(i) << ": ";
+                std::cout << prefix;
+                mKeyDefinition.print(cellKey(i));
+                std::cout << ": ";
                 printCell(cellData(i));
                 std::cout << std::endl;
             }
@@ -146,7 +148,7 @@ template <typename F> void TreePage::print(const std::string &prefix, F printCel
                 if(i == 0) {
                     std::cout << "_";
                 } else {
-                    std::cout << cellRowId(i);
+                    mKeyDefinition.print(cellKey(i));
                 }
                 std::cout << ": " << std::endl;
 

@@ -135,20 +135,6 @@ TreePage::Size TreePage::cellTotalDataSize(Index index)
     return 0;
 }
 
-TreePage::RowId TreePage::cellRowId(TreePage::Index index)
-{
-    if(type() == Type::Indirect && index == 0) {
-        return kInvalidRowId;
-    }
-
-    return *reinterpret_cast<RowId*>(cell(index));
-}
-
-void TreePage::setCellRowId(TreePage::Index index, RowId rowId)
-{
-    *reinterpret_cast<RowId*>(cell(index)) = rowId;
-}
-
 void TreePage::setCellKey(Index index, void *key, size_t keySize)
 {
     if(keySize == cellKeySize(index)) {
@@ -320,10 +306,9 @@ Page::Index TreePage::indirectPageIndex(Index index)
     return *indexData;
 }
 
-TreePage::RowId TreePage::indirectRectifyDeficientChild(TreePage &childPage, void *removedKey)
+TreePage::KeyValue TreePage::indirectRectifyDeficientChild(TreePage &childPage, void *removedKey)
 {
     Index childIndex = search(removedKey);
-    RowId removedRowId;
 
     if(childIndex == numCells() || keyCompare(cellKey(childIndex), removedKey) > 0) {
         childIndex -= 1;
@@ -333,21 +318,25 @@ TreePage::RowId TreePage::indirectRectifyDeficientChild(TreePage &childPage, voi
         TreePage rightNeighbor = getPage(indirectPageIndex(childIndex + 1));
         if(rightNeighbor.canSupplyItem(0)) {
             indirectRotateLeft(childPage, rightNeighbor, childIndex);
-            return TreePage::kInvalidRowId;
+            return KeyValue();
         } else {
-            removedRowId = cellRowId(childIndex + 1);
+            KeyValue removedKey;
+            removedKey.data.resize(cellKeySize(childIndex + 1));
+            std::memcpy(removedKey.data.data(), cellKey(childIndex + 1), removedKey.data.size());
             indirectMergeChildren(childPage, rightNeighbor, childIndex + 1);
-            return removedRowId;
+            return removedKey;
         }
     } else {
         TreePage leftNeighbor = getPage(indirectPageIndex(childIndex - 1));
         if(leftNeighbor.canSupplyItem(leftNeighbor.numCells() - 1)) {
             indirectRotateRight(leftNeighbor, childPage, childIndex);
-            return TreePage::kInvalidRowId;
+            return KeyValue();
         } else {
-            removedRowId = cellRowId(childIndex);
+            KeyValue removedKey;
+            removedKey.data.resize(cellKeySize(childIndex));
+            std::memcpy(removedKey.data.data(), cellKey(childIndex), removedKey.data.size());
             indirectMergeChildren(leftNeighbor, childPage, childIndex);
-            return removedRowId;
+            return removedKey;
         }
     }
 }
