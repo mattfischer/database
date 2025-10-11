@@ -34,20 +34,6 @@ public:
         virtual void print(Key key) = 0;
     };
 
-    struct KeyValue {
-        KeyValue() = default;
-        KeyValue(Key key) {
-            data.resize(key.size);
-            std::memcpy(data.data(), key.data, key.size);
-        }
-
-        operator Key() {
-            return Key(data.data(), data.size());
-        }
-
-        std::vector<uint8_t> data;
-    };
-
     TreePage(Page &page, KeyDefinition &keyDefinition);
 
     void initialize(Type type);
@@ -86,7 +72,7 @@ public:
     void indirectAdd(Key key, TreePage &childPage);
     Page::Index indirectPageIndex(Index index);
     Page::Index indirectLookup(Key key);
-    KeyValue indirectRectifyDeficientChild(TreePage &childPage, Key removedKey);
+    void indirectRectifyDeficientChild(TreePage &childPage);
     void indirectPushHead(Key oldHeadKey, TreePage &childPage);
     void indirectPushTail(Key key, TreePage &childPage);
     void indirectPopHead();

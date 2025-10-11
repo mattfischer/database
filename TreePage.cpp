@@ -305,33 +305,23 @@ Page::Index TreePage::indirectPageIndex(Index index)
     return *indexData;
 }
 
-TreePage::KeyValue TreePage::indirectRectifyDeficientChild(TreePage &childPage, Key removedKey)
+void TreePage::indirectRectifyDeficientChild(TreePage &childPage)
 {
-    Index childIndex = search(removedKey);
-
-    if(childIndex == numCells() || keyCompare(cellKey(childIndex), removedKey) > 0) {
-        childIndex -= 1;
-    }
+    Index childIndex = search(childPage.cellKey(1)) - 1;
 
     if(childIndex < numCells() - 1) {
         TreePage rightNeighbor = getPage(indirectPageIndex(childIndex + 1));
         if(rightNeighbor.canSupplyItem(0)) {
             indirectRotateLeft(childPage, rightNeighbor, childIndex);
-            return KeyValue();
         } else {
-            KeyValue removedKey = cellKey(childIndex + 1);
             indirectMergeChildren(childPage, rightNeighbor, childIndex + 1);
-            return removedKey;
         }
     } else {
         TreePage leftNeighbor = getPage(indirectPageIndex(childIndex - 1));
         if(leftNeighbor.canSupplyItem(leftNeighbor.numCells() - 1)) {
             indirectRotateRight(leftNeighbor, childPage, childIndex);
-            return KeyValue();
         } else {
-            KeyValue removedKey = cellKey(childIndex);
             indirectMergeChildren(leftNeighbor, childPage, childIndex);
-            return removedKey;
         }
     }
 }

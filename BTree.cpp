@@ -21,6 +21,20 @@ void *BTree::lookup(Key key)
     return leafPage.leafLookup(key);
 }
 
+struct KeyValue {
+    KeyValue() = default;
+    KeyValue(BTree::Key key) {
+        data.resize(key.size);
+        std::memcpy(data.data(), key.data, key.size);
+    }
+
+    operator BTree::Key() {
+        return BTree::Key(data.data(), data.size());
+    }
+
+    std::vector<uint8_t> data;
+};
+
 void *BTree::add(Key key, TreePage::Size dataSize)
 {
     TreePage leafPage = findLeaf(key);
@@ -29,7 +43,7 @@ void *BTree::add(Key key, TreePage::Size dataSize)
     }
     
     TreePage::Index splitIndex = leafPage.numCells() / 2;
-    TreePage::KeyValue splitKey = leafPage.cellKey(splitIndex);
+    KeyValue splitKey = leafPage.cellKey(splitIndex);
     TreePage newLeafPage = leafPage.split(splitIndex);
 
     void *ret;
@@ -63,7 +77,7 @@ void *BTree::add(Key key, TreePage::Size dataSize)
                 break;
             } else {
                 splitIndex = indirectPage.numCells() / 2;
-                TreePage::KeyValue indirectSplitKey = indirectPage.cellKey(splitIndex);
+                KeyValue indirectSplitKey = indirectPage.cellKey(splitIndex);
                 TreePage newIndirectPage = indirectPage.split(splitIndex);
 
                 if(keyCompare(indirectSplitKey, splitKey) <= 0) {
@@ -89,7 +103,6 @@ void BTree::remove(Key key)
     leafPage.leafRemove(key);
 
     Page::Index index = leafPage.page().index();
-    TreePage::KeyValue removedKey = key;
 
     while(true) {
         TreePage page = getPage(index);
@@ -106,7 +119,7 @@ void BTree::remove(Key key)
             break;
         }
         TreePage parentPage = getPage(page.parent());
-        removedKey = parentPage.indirectRectifyDeficientChild(page, removedKey);
+        parentPage.indirectRectifyDeficientChild(page);
 
         index = parentPage.page().index();
     }
