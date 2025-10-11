@@ -33,7 +33,7 @@ void *BTree::add(Key key, TreePage::Size dataSize)
     TreePage newLeafPage = leafPage.split(splitIndex);
 
     void *ret;
-    if(mKeyDefinition->compare(splitKey, key) <= 0) {
+    if(keyCompare(splitKey, key) <= 0) {
         ret = newLeafPage.leafAdd(key, dataSize);
     } else {
         ret = leafPage.leafAdd(key, dataSize);
@@ -64,9 +64,9 @@ void *BTree::add(Key key, TreePage::Size dataSize)
             } else {
                 splitIndex = indirectPage.numCells() / 2;
                 TreePage::KeyValue indirectSplitKey = indirectPage.cellKey(splitIndex);
-                TreePage newIndirectPage  = indirectPage.split(splitIndex);
+                TreePage newIndirectPage = indirectPage.split(splitIndex);
 
-                if(mKeyDefinition->compare(indirectSplitKey, splitKey) <= 0) {
+                if(keyCompare(indirectSplitKey, splitKey) <= 0) {
                     newIndirectPage.indirectAdd(splitKey, rightSplitPage);
                 } else {
                     indirectPage.indirectAdd(splitKey, rightSplitPage);
@@ -130,4 +130,9 @@ TreePage BTree::findLeaf(Key key)
 TreePage BTree::getPage(Page::Index index)
 {
     return TreePage(mPageSet.page(index), *mKeyDefinition);
+}
+
+int BTree::keyCompare(Key a, Key b)
+{
+    return mKeyDefinition->compare(a, b);
 }

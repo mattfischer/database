@@ -19,6 +19,8 @@ public:
         Key() = default;
         Key(void *d, Size s) : data(d), size(s) {}
 
+        operator bool() { return data; }
+
         void *data = nullptr;
         Size size = 0;
     };
@@ -40,11 +42,7 @@ public:
         }
 
         operator Key() {
-            Key key;
-            key.data = data.data();
-            key.size = data.size();
-
-            return key;
+            return Key(data.data(), data.size());
         }
 
         std::vector<uint8_t> data;
@@ -62,23 +60,17 @@ public:
     Page::Index parent();
     void setParent(Page::Index parent);
 
-    Size freeSpace();
-
     Index numCells();
 
     Key cellKey(Index index);
-    Size cellTotalKeySize(Index index);
+    void setCellKey(Index index, Key key);
 
     void *cellData(Index index);
     Size cellDataSize(Index index);
-    Size cellTotalDataSize(Index index);
-
-    void setCellKey(Index index, Key key);
 
     void *insertCell(Key key, Size dataSize, Index index);
 
     void removeCell(Index index);
-    void removeCells(Index begin, Index end);
 
     TreePage split(Index index);
 
@@ -95,9 +87,6 @@ public:
     Page::Index indirectPageIndex(Index index);
     Page::Index indirectLookup(Key key);
     KeyValue indirectRectifyDeficientChild(TreePage &childPage, Key removedKey);
-    void indirectRotateRight(TreePage &leftChild, TreePage &rightChild, Index index);
-    void indirectRotateLeft(TreePage &leftChild, TreePage &rightChild, Index index);
-    void indirectMergeChildren(TreePage &leftChild, TreePage &rightChild, Index index);
     void indirectPushHead(Key oldHeadKey, TreePage &childPage);
     void indirectPushTail(Key key, TreePage &childPage);
     void indirectPopHead();
@@ -122,18 +111,27 @@ private:
     uint16_t cellOffset(Index index);
     uint16_t cellKeyOffset(Index index); 
     uint16_t cellDataOffset(Index index);
+    Size cellTotalKeySize(Index index);
+    Size cellTotalDataSize(Index index);
 
     uint16_t allocateCell(Key key, Size dataSize);
     bool canAllocateCell(Size keySize, Size dataSize);
 
+    void removeCells(Index begin, Index end);
+
     Index search(Key key);
 
+    Size freeSpace();
     void defragPage();
 
     int keyCompare(Key a, Key b);
     TreePage getPage(Page::Index index);
 
     PageSet &pageSet();
+
+    void indirectRotateRight(TreePage &leftChild, TreePage &rightChild, Index index);
+    void indirectRotateLeft(TreePage &leftChild, TreePage &rightChild, Index index);
+    void indirectMergeChildren(TreePage &leftChild, TreePage &rightChild, Index index);
 
     Page &mPage;
     KeyDefinition &mKeyDefinition;

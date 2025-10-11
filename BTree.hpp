@@ -48,6 +48,7 @@ private:
 
     TreePage findLeaf(TreePage::Key);
     TreePage getPage(Page::Index index);
+    int keyCompare(Key a, Key b);
 };
 
 #endif

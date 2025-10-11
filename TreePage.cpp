@@ -151,7 +151,7 @@ void TreePage::setCellKey(Index index, Key key)
         offsets[index] = offset;
         
         Size totalKeySize = 0;
-        if(key.data) {
+        if(key) {
             totalKeySize = mKeyDefinition.fixedSize();
             if(totalKeySize == 0) {
                 totalKeySize = sizeof(uint16_t) + key.size;
@@ -273,7 +273,7 @@ bool TreePage::indirectCanAdd(size_t keySize)
 
 void TreePage::indirectAdd(Key key, TreePage &childPage)
 {
-    if(!key.data) {
+    if(!key) {
         Page::Index *indexData = reinterpret_cast<Page::Index*>(TreePage::insertCell(key, sizeof(Page::Index), 0));
         *indexData = childPage.pageIndex();
         childPage.setParent(pageIndex());
@@ -405,8 +405,8 @@ void TreePage::indirectPushTail(Key key, TreePage &childPage)
         key = Key();
     }
 
-    Page::Index *indexData = reinterpret_cast<Page::Index*>(TreePage::insertCell(key, sizeof(Page::Index), numCells()));
-    *indexData = childPage.pageIndex();
+    void *dst = TreePage::insertCell(key, sizeof(Page::Index), numCells());
+    *reinterpret_cast<Page::Index*>(dst) = childPage.pageIndex();
     childPage.setParent(pageIndex());  
 }
     
@@ -474,7 +474,7 @@ uint16_t TreePage::allocateCell(Key key, Size dataSize)
     uint16_t arrayEnd = sizeof(Header) + (head.numCells + 1) * sizeof(uint16_t);
 
     Size totalKeySize = 0;
-    if(key.data) {
+    if(key) {
         totalKeySize = mKeyDefinition.fixedSize();
         if(totalKeySize == 0) {
             totalKeySize = key.size + sizeof(uint16_t);
@@ -494,7 +494,7 @@ uint16_t TreePage::allocateCell(Key key, Size dataSize)
     uint16_t offset = head.dataStart - totalSize;
     head.dataStart -= totalSize;
 
-    if(key.data) {
+    if(key) {
         if(mKeyDefinition.fixedSize() == 0) {
             *reinterpret_cast<uint16_t*>(mPage.data(offset)) = key.size;
             std::memcpy(mPage.data(offset + sizeof(uint16_t)), key.data, key.size);
