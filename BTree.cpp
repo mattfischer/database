@@ -72,7 +72,7 @@ void *BTree::add(Key key, TreePage::Size dataSize)
             break;
         } else {
             TreePage indirectPage = getPage(parentPageIndex);
-            if(indirectPage.indirectCanAdd(sizeof(RowId))) {
+            if(indirectPage.indirectCanAdd(splitKey.data.size())) {
                 indirectPage.indirectAdd(splitKey, rightSplitPage);
                 break;
             } else {

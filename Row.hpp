@@ -48,6 +48,8 @@ public:
     float readFloat(unsigned int index);
     std::string readString(unsigned int index);
 
+    void print();
+
 private:
     const RowSchema &mSchema;
     const uint8_t *mData;

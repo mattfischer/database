@@ -1,5 +1,7 @@
 #include "Row.hpp"
 
+#include <iostream>
+
 RowWriter::RowWriter(const RowSchema &schema)
 : mSchema(schema)
 {
@@ -96,4 +98,21 @@ std::string RowReader::readString(unsigned int index)
 {
     const uint16_t *offsets = reinterpret_cast<const uint16_t*>(mData);
     return std::string(reinterpret_cast<const char*>(mData + offsets[index]));
+}
+
+void RowReader::print()
+{
+    for(unsigned int i=0; i<mSchema.fields.size(); i++) {
+        switch(mSchema.fields[i].type) {
+            case RowSchema::Field::Int:
+                std::cout << readInt(i) << " ";
+                break;
+            case RowSchema::Field::Float:
+                std::cout << readFloat(i) << " ";
+                break;
+            case RowSchema::Field::String:
+                std::cout << "\"" << readString(i) << "\" ";
+                break;
+        }
+    }
 }
