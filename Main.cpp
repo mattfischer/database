@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "PageSet.hpp"
-#include "Row.hpp"
+#include "Record.hpp"
 #include "Table.hpp"
 
 #include <iostream>
@@ -10,8 +10,8 @@
 int main(int argc, char *argv[])
 {
     PageSet pageSet;
-    RowSchema schema;
-    schema.fields.push_back({RowSchema::Field::String, "name"});
+    RecordSchema schema;
+    schema.fields.push_back({RecordSchema::Field::String, "name"});
 
     Page &rootPage = pageSet.addPage();
     Table table(rootPage, std::move(schema));
@@ -20,10 +20,10 @@ int main(int argc, char *argv[])
     srand(12345);
     for(int i=0; i<64; i++) {
         uint32_t key = rand() % 1000;
-        RowWriter writer(table.schema());
+        RecordWriter writer(table.schema());
         std::stringstream ss;
         ss << key;
-        RowWriter::Field field;
+        RecordWriter::Field field;
         field.stringValue = ss.str();
         writer.setField(0, field);
 

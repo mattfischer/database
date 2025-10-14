@@ -1,10 +1,10 @@
-#ifndef ROW_HPP
-#define ROW_HPP
+#ifndef RECORD_HPP
+#define RECORD_HPP
 
 #include <string>
 #include <vector>
 
-struct RowSchema {
+struct RecordSchema {
     struct Field {
         enum Type {
             Int,
@@ -19,9 +19,9 @@ struct RowSchema {
     std::vector<Field> fields;
 };
 
-class RowWriter {
+class RecordWriter {
 public:
-    RowWriter(const RowSchema &schema);
+    RecordWriter(const RecordSchema &schema);
 
     struct Field {
         int intValue;
@@ -35,14 +35,14 @@ public:
     void write(void *data);
 
 private:
-    const RowSchema &mSchema;
+    const RecordSchema &mSchema;
     std::vector<Field> mValues;
     uint16_t mExtraOffset;
 };
 
-class RowReader {
+class RecordReader {
 public:
-    RowReader(const RowSchema &schema, const void *data);
+    RecordReader(const RecordSchema &schema, const void *data);
 
     int readInt(unsigned int index);
     float readFloat(unsigned int index);
@@ -51,7 +51,7 @@ public:
     void print();
 
 private:
-    const RowSchema &mSchema;
+    const RecordSchema &mSchema;
     const uint8_t *mData;
 };
 

@@ -5,7 +5,7 @@ sources = [
     'Main.cpp',
     'Page.cpp',
     'PageSet.cpp',
-    'Row.cpp',
+    'Record.cpp',
     'Table.cpp',
     'TreePage.cpp',
 ]

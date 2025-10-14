@@ -3,7 +3,7 @@
 
 #include "BTree.hpp"
 #include "PageSet.hpp"
-#include "Row.hpp"
+#include "Record.hpp"
 
 #include <memory>
 
@@ -11,20 +11,20 @@ class Table {
 public:
     typedef uint32_t RowId;
 
-    Table(Page &rootPage, RowSchema schema);
+    Table(Page &rootPage, RecordSchema schema);
 
     void initialize();
 
-    RowSchema &schema();
+    RecordSchema &schema();
 
-    RowId addRow(RowWriter &writer);
+    RowId addRow(RecordWriter &writer);
     void removeRow(RowId rowId);
 
     void print();
 
 private:
     PageSet &mPageSet;
-    RowSchema mSchema;
+    RecordSchema mSchema;
     BTree mTree;
     RowId mNextRowId;
 };

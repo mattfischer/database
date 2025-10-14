@@ -15,7 +15,7 @@ public:
     }
 };
 
-Table::Table(Page &rootPage, RowSchema schema)
+Table::Table(Page &rootPage, RecordSchema schema)
 : mPageSet(rootPage.pageSet())
 , mSchema(std::move(schema))
 , mTree(mPageSet, rootPage.index(), std::make_unique<RowIdKeyDefinition>())
@@ -28,12 +28,12 @@ void Table::initialize()
     mNextRowId = 1;
 }
 
-RowSchema &Table::schema()
+RecordSchema &Table::schema()
 {
     return mSchema;
 }
 
-Table::RowId Table::addRow(RowWriter &writer)
+Table::RowId Table::addRow(RecordWriter &writer)
 {
     RowId rowId = mNextRowId;
     void *data = mTree.add(BTree::Key(&rowId, sizeof(rowId)), writer.dataSize());
@@ -52,7 +52,7 @@ void Table::removeRow(RowId rowId)
 void Table::print()
 {
     auto printCell = [&](void *data) {
-        RowReader reader(mSchema, data);
+        RecordReader reader(mSchema, data);
         reader.print();
     };
 
