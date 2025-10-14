@@ -33,10 +33,16 @@ RecordSchema &Table::schema()
     return mSchema;
 }
 
+BTree &Table::tree()
+{
+    return mTree;
+}
+
 Table::RowId Table::addRow(RecordWriter &writer)
 {
     RowId rowId = mNextRowId;
-    void *data = mTree.add(BTree::Key(&rowId, sizeof(rowId)), writer.dataSize());
+    BTree::Pointer pointer = mTree.add(BTree::Key(&rowId, sizeof(rowId)), writer.dataSize());
+    void *data = mTree.data(pointer);
     writer.write(data);
 
     mNextRowId++;
@@ -46,7 +52,8 @@ Table::RowId Table::addRow(RecordWriter &writer)
 
 void Table::removeRow(RowId rowId)
 {
-    mTree.remove(BTree::Key(&rowId, sizeof(rowId)));  
+    BTree::Pointer pointer = mTree.lookup(BTree::Key(&rowId, sizeof(rowId)));
+    mTree.remove(pointer);
 }
 
 void Table::print()
@@ -57,4 +64,11 @@ void Table::print()
     };
 
     mTree.print(printCell);
+}
+
+Result Table::allRows()
+{
+    Result result(*this, mTree.first());
+
+    return result;
 }

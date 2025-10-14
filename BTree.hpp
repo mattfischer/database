@@ -13,13 +13,27 @@ public:
     typedef TreePage::Key Key;
     typedef TreePage::KeyDefinition KeyDefinition;
 
+    struct Pointer {
+        Page::Index pageIndex;
+        TreePage::Index cellIndex;
+    };
+
     BTree(PageSet &pageSet, Page::Index rootIndex, std::unique_ptr<TreePage::KeyDefinition> keyDefinition);
 
     void initialize();
 
-    void *lookup(Key key);
-    void *add(Key key, TreePage::Size size);
-    void remove(Key key);
+    Pointer lookup(Key key);
+    Pointer add(Key key, TreePage::Size size);
+    void remove(Pointer pointer);
+
+    void *key(Pointer pointer);
+    void *data(Pointer pointer);
+
+    Pointer first();
+    Pointer last();
+
+    Pointer next(Pointer pointer);
+    Pointer prev(Pointer pointer);
 
     template <typename F> void print(F printCell) {
         Page &page = mPageSet.page(mRootIndex);

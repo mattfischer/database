@@ -4,6 +4,7 @@
 #include "BTree.hpp"
 #include "PageSet.hpp"
 #include "Record.hpp"
+#include "Result.hpp"
 
 #include <memory>
 
@@ -15,10 +16,14 @@ public:
 
     void initialize();
 
+    BTree &tree();
+
     RecordSchema &schema();
 
     RowId addRow(RecordWriter &writer);
     void removeRow(RowId rowId);
+
+    Result allRows();
 
     void print();
 

@@ -18,6 +18,8 @@ void TreePage::initialize(Type type)
     head.dataStart = mPage.size();
     head.freeSpace = mPage.size() - sizeof(Header);
     head.parent = Page::kInvalidIndex;
+    head.prevSibling = Page::kInvalidIndex;
+    head.nextSibling = Page::kInvalidIndex;
 }
 
 Page &TreePage::page()
@@ -43,6 +45,26 @@ Page::Index TreePage::parent()
 void TreePage::setParent(Page::Index parent)
 {
     header().parent = parent;
+}
+
+Page::Index TreePage::prevSibling()
+{
+    return header().prevSibling;
+}
+
+void TreePage::setPrevSibling(Page::Index prevSibling)
+{
+    header().prevSibling = prevSibling;
+}
+
+Page::Index TreePage::nextSibling()
+{
+    return header().nextSibling;
+}
+
+void TreePage::setNextSibling(Page::Index nextSibling)
+{
+    header().nextSibling = nextSibling;
 }
 
 TreePage::Size TreePage::freeSpace()
@@ -163,7 +185,7 @@ void TreePage::setCellKey(Index index, Key key)
     }
 }
 
-void *TreePage::insertCell(Key key, TreePage::Size dataSize, Index index)
+TreePage::Index TreePage::insertCell(Key key, TreePage::Size dataSize, Index index)
 {
     Header &head = header();
     uint16_t *offsets = offsetsArray();
@@ -175,7 +197,7 @@ void *TreePage::insertCell(Key key, TreePage::Size dataSize, Index index)
 
     head.freeSpace -= cellSize(index) + sizeof(uint16_t);
 
-    return cellData(index);
+    return index;
 }
 
 void TreePage::removeCell(Index index)
@@ -200,6 +222,13 @@ TreePage TreePage::split(Index index)
     TreePage newPage(pageSet().addPage(), mKeyDefinition);
     newPage.initialize(type());
     newPage.setParent(parent());
+
+    newPage.setPrevSibling(pageIndex());
+    newPage.setNextSibling(nextSibling());
+    if(nextSibling() != Page::kInvalidIndex) {
+        getPage(nextSibling()).setPrevSibling(newPage.pageIndex());
+    }
+    setNextSibling(newPage.pageIndex());
 
     Index begin = index;
     Index end = numCells();
@@ -234,13 +263,13 @@ bool TreePage::canSupplyItem(Index index)
     return freeSpace() + cellSize(index) + sizeof(uint16_t) < page().size() / 2;
 }
 
-void *TreePage::leafLookup(Key key)
+TreePage::Index TreePage::leafLookup(Key key)
 {
     Index index = search(key);
     if(index < numCells() && keyCompare(cellKey(index), key) == 0) {
-        return cellData(index);
+        return index;
     } else {
-        return nullptr;
+        return kInvalidIndex;
     }
 }
 
@@ -249,23 +278,21 @@ bool TreePage::leafCanAdd(size_t keySize, size_t dataSize)
     return canAllocateCell(keySize, dataSize);
 }
 
-void *TreePage::leafAdd(Key key, size_t dataSize)
+TreePage::Index TreePage::leafAdd(Key key, size_t dataSize)
 {
     Index index = search(key);
     if(index < numCells() && keyCompare(cellKey(index), key) == 0) {
-        return nullptr;
+        return kInvalidIndex;
     } else {
         return insertCell(key, dataSize, index);
     }
 }
 
-void TreePage::leafRemove(Key key)
+void TreePage::leafRemove(Index index)
 {
-    Index index = search(key);
-    if(index < numCells() && keyCompare(cellKey(index), key) == 0) {
-        removeCell(index);
-    }
+    removeCell(index);
 }
+
 bool TreePage::indirectCanAdd(size_t keySize)
 {
     return canAllocateCell(keySize, sizeof(Page::Index));
@@ -274,7 +301,8 @@ bool TreePage::indirectCanAdd(size_t keySize)
 void TreePage::indirectAdd(Key key, TreePage &childPage)
 {
     if(!key) {
-        Page::Index *indexData = reinterpret_cast<Page::Index*>(TreePage::insertCell(key, sizeof(Page::Index), 0));
+        TreePage::Index newIndex = insertCell(key, sizeof(Page::Index), 0);
+        Page::Index *indexData = reinterpret_cast<Page::Index*>(cellData(newIndex));
         *indexData = childPage.pageIndex();
         childPage.setParent(pageIndex());
     } else {
@@ -282,7 +310,8 @@ void TreePage::indirectAdd(Key key, TreePage &childPage)
         if(index < numCells() && keyCompare(cellKey(index), key) == 0) {
             return;
         } else {
-            Page::Index *indexData = reinterpret_cast<Page::Index*>(TreePage::insertCell(key, sizeof(Page::Index), index));
+            TreePage::Index newIndex = insertCell(key, sizeof(Page::Index), index);
+            Page::Index *indexData = reinterpret_cast<Page::Index*>(cellData(newIndex));
             *indexData = childPage.pageIndex();
             childPage.setParent(pageIndex());
         }
@@ -335,9 +364,9 @@ void TreePage::indirectRotateRight(TreePage &leftChild, TreePage &rightChild, In
         leftChild.indirectPopTail();
     } else {
         Size size = leftChild.cellDataSize(leftChild.numCells() - 1);
-        void *dst = rightChild.insertCell(leftChild.cellKey(leftChild.numCells() - 1), size, 0);
-        void *src = leftChild.cellData(leftChild.numCells() - 1);
-        std::memcpy(dst, src, size);
+        TreePage::Index dstIndex = rightChild.insertCell(leftChild.cellKey(leftChild.numCells() - 1), size, 0);
+        TreePage::Index srcIndex = leftChild.numCells() - 1;
+        std::memcpy(rightChild.cellData(dstIndex), leftChild.cellData(srcIndex), size);
         setCellKey(index, leftChild.cellKey(leftChild.numCells() - 1));
         leftChild.removeCell(leftChild.numCells() - 1);
     }
@@ -352,9 +381,9 @@ void TreePage::indirectRotateLeft(TreePage &leftChild, TreePage &rightChild, Ind
         rightChild.indirectPopHead();
     } else {
         Size dataSize = rightChild.cellDataSize(0);
-        void *dst = leftChild.insertCell(rightChild.cellKey(0), dataSize, leftChild.numCells());
-        void *src = rightChild.cellData(0);
-        std::memcpy(dst, src, dataSize);
+        TreePage::Index dstIndex = leftChild.insertCell(rightChild.cellKey(0), dataSize, leftChild.numCells());
+        TreePage::Index srcIndex = 0;
+        std::memcpy(leftChild.cellData(dstIndex), rightChild.cellData(srcIndex), dataSize);
         setCellKey(index + 1, rightChild.cellKey(1));
         rightChild.removeCell(0);
     }
@@ -372,20 +401,25 @@ void TreePage::indirectMergeChildren(TreePage &leftChild, TreePage &rightChild, 
             }
         } else {
             Size dataSize = rightChild.cellDataSize(i);
-            void *dst = leftChild.insertCell(rightChild.cellKey(i), dataSize, leftChild.numCells());
-            void *src = rightChild.cellData(i);
-            std::memcpy(dst, src, dataSize);
+            TreePage::Index dstIndex = leftChild.insertCell(rightChild.cellKey(i), dataSize, leftChild.numCells());
+            TreePage::Index srcIndex = i;
+            std::memcpy(leftChild.cellData(dstIndex), rightChild.cellData(srcIndex), dataSize);
         }
     }
     removeCell(index);
+    if(rightChild.nextSibling() != Page::kInvalidIndex) {
+        getPage(rightChild.nextSibling()).setPrevSibling(leftChild.pageIndex());
+    }
+    leftChild.setNextSibling(rightChild.nextSibling());
+    TreePage next = getPage(rightChild.nextSibling());
     pageSet().deletePage(rightChild.page());
 }
 
 void TreePage::indirectPushHead(Key oldHeadKey, TreePage &childPage)
 {
     setCellKey(0, oldHeadKey);
-    void *dst = insertCell(Key(), sizeof(Page::Index), 0);
-    *reinterpret_cast<Page::Index*>(dst) = childPage.pageIndex();
+    TreePage::Index dstIndex = insertCell(Key(), sizeof(Page::Index), 0);
+    *reinterpret_cast<Page::Index*>(cellData(dstIndex)) = childPage.pageIndex();
     childPage.setParent(pageIndex());
 }
 
@@ -395,8 +429,8 @@ void TreePage::indirectPushTail(Key key, TreePage &childPage)
         key = Key();
     }
 
-    void *dst = TreePage::insertCell(key, sizeof(Page::Index), numCells());
-    *reinterpret_cast<Page::Index*>(dst) = childPage.pageIndex();
+    TreePage::Index dstIndex = TreePage::insertCell(key, sizeof(Page::Index), numCells());
+    *reinterpret_cast<Page::Index*>(cellData(dstIndex)) = childPage.pageIndex();
     childPage.setParent(pageIndex());  
 }
     

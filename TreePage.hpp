@@ -8,6 +8,8 @@
 class TreePage {
 public:
     typedef uint16_t Index;
+    static const Index kInvalidIndex = UINT16_MAX;
+
     typedef uint16_t Size;
 
     enum Type : uint8_t {
@@ -46,6 +48,12 @@ public:
     Page::Index parent();
     void setParent(Page::Index parent);
 
+    Page::Index prevSibling();
+    void setPrevSibling(Page::Index prevSibling);
+
+    Page::Index nextSibling();
+    void setNextSibling(Page::Index prevSibling);
+
     Index numCells();
 
     Key cellKey(Index index);
@@ -54,7 +62,7 @@ public:
     void *cellData(Index index);
     Size cellDataSize(Index index);
 
-    void *insertCell(Key key, Size dataSize, Index index);
+    Index insertCell(Key key, Size dataSize, Index index);
 
     void removeCell(Index index);
 
@@ -63,10 +71,10 @@ public:
     bool isDeficient();
     bool canSupplyItem(Index index);
 
-    void *leafLookup(Key key);
+    Index leafLookup(Key key);
     bool leafCanAdd(size_t keySize, size_t dataSize);
-    void *leafAdd(Key key, size_t dataSize);
-    void leafRemove(Key key);
+    Index leafAdd(Key key, size_t dataSize);
+    void leafRemove(Index index);
 
     bool indirectCanAdd(size_t keySize);
     void indirectAdd(Key key, TreePage &childPage);
@@ -87,6 +95,8 @@ private:
         uint16_t dataStart;
         uint16_t freeSpace;
         Page::Index parent;
+        Page::Index prevSibling;
+        Page::Index nextSibling;
     };
 
     Header &header();

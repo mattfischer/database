@@ -32,5 +32,16 @@ int main(int argc, char *argv[])
         std::cout << "----------" << std::endl;
     }
 
+    Result result = table.allRows();
+    for(int i = 0; result.valid(); i++) {
+        void *data = result.data();
+        RecordReader reader(table.schema(), data);
+        std::cout << i << ": ";
+        reader.print();
+        std::cout << std::endl;
+
+        result.next();
+    }
+
     return 0;
 }

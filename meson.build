@@ -6,6 +6,7 @@ sources = [
     'Page.cpp',
     'PageSet.cpp',
     'Record.cpp',
+    'Result.cpp',
     'Table.cpp',
     'TreePage.cpp',
 ]
