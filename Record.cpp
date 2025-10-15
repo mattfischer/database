@@ -84,20 +84,20 @@ RecordReader::RecordReader(const RecordSchema &schema, const void *data)
 
 Value RecordReader::readField(unsigned int index)
 {
-    Value value(mSchema.fields[index].type);
+    Value value;
 
     const uint16_t *offsets = reinterpret_cast<const uint16_t*>(mData);
-    switch(value.type()) {
+    switch(mSchema.fields[index].type) {
         case Value::Type::Int:
-            value.setIntValue(*reinterpret_cast<const int*>(mData + offsets[index]));
+            value.setValue(*reinterpret_cast<const int*>(mData + offsets[index]));
             break;
 
         case Value::Type::Float:
-            value.setFloatValue(*reinterpret_cast<const float*>(mData + offsets[index]));
+            value.setValue(*reinterpret_cast<const float*>(mData + offsets[index]));
             break;
 
         case Value::Type::String:
-            value.setStringValue(std::string(reinterpret_cast<const char*>(mData + offsets[index])));
+            value.setValue(std::string(reinterpret_cast<const char*>(mData + offsets[index])));
             break;
     }
 

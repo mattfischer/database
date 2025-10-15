@@ -13,13 +13,15 @@ public:
     };
 
     Value() = default;
-    Value(Type type);
+    Value(int value);
+    Value(float value);
+    Value(const std::string &value);
 
     Type type();
 
-    void setIntValue(int value);
-    void setFloatValue(float value);
-    void setStringValue(const std::string &value);
+    void setValue(int value);
+    void setValue(float value);
+    void setValue(const std::string &value);
 
     int intValue();
     float floatValue();

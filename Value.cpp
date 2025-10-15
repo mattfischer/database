@@ -2,9 +2,22 @@
 
 #include <iostream>
 
-Value::Value(Type type)
-: mType(type)
+Value::Value(int value)
 {
+    mType = Type::Int;
+    mValue = value;
+}
+
+Value::Value(float value)
+{
+    mType = Type::Float;
+    mValue = value;
+}
+
+Value::Value(const std::string &value)
+{
+    mType = Type::String;
+    mValue = value;
 }
 
 Value::Type Value::type()
@@ -12,18 +25,21 @@ Value::Type Value::type()
     return mType;
 }
 
-void Value::setIntValue(int value)
+void Value::setValue(int value)
 {
+    mType = Type::Int;
     mValue = value;
 }
 
-void Value::setFloatValue(float value)
+void Value::setValue(float value)
 {
+    mType = Type::Float;
     mValue = value;
 }
 
-void Value::setStringValue(const std::string &value)
+void Value::setValue(const std::string &value)
 {
+    mType = Type::String;
     mValue = value;
 }
 
@@ -54,7 +70,7 @@ void Value::print()
             break;
 
         case Value::Type::String:
-            std::cout << "\"" << stringValue() << "\" ";  
+            std::cout << "\"" << stringValue() << "\"";  
             break;
     }
 }
