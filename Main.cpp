@@ -8,6 +8,7 @@
 #include "RowIterators/TableIterator.hpp"
 
 #include "RowPredicates/ComparePredicate.hpp"
+#include "RowPredicates/LogicalPredicate.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -56,7 +57,10 @@ int main(int argc, char *argv[])
     std::cout << "-----------" << std::endl;
     std::cout << std::endl;
 
-    std::unique_ptr<RowPredicate> predicate = std::make_unique<RowPredicates::ComparePredicate>(1, RowPredicates::ComparePredicate::Comparison::LessThan, Value(500));
+    std::unique_ptr<RowPredicate> predicate1 = std::make_unique<RowPredicates::ComparePredicate>(1, RowPredicates::ComparePredicate::Comparison::LessThan, Value(100));
+    std::unique_ptr<RowPredicate> predicate2 = std::make_unique<RowPredicates::ComparePredicate>(1, RowPredicates::ComparePredicate::Comparison::GreaterThan, Value(800));
+    std::unique_ptr<RowPredicate> predicate = std::make_unique<RowPredicates::LogicalPredicate>(std::move(predicate1), RowPredicates::LogicalPredicate::Operation::Or, std::move(predicate2));
+
     RowIterators::SelectIterator selectIterator(std::make_unique<RowIterators::TableIterator>(table), std::move(predicate));
     selectIterator.start();
     printIterator(selectIterator);

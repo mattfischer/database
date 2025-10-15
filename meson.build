@@ -10,6 +10,7 @@ sources = [
     'RowIterators/SelectIterator.cpp',
     'RowIterators/TableIterator.cpp',
     'RowPredicates/ComparePredicate.cpp',
+    'RowPredicates/LogicalPredicate.cpp',
     'Table.cpp',
     'Value.cpp'
 ]
