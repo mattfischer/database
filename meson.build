@@ -7,7 +7,7 @@ sources = [
     'Page.cpp',
     'PageSet.cpp',
     'Record.cpp',
-    'Result.cpp',
+    'RowIterators/TableIterator.cpp',
     'Table.cpp',
     'Value.cpp'
 ]

@@ -34,7 +34,7 @@ class RecordReader {
 public:
     RecordReader(const RecordSchema &schema, const void *data);
 
-    Value readValue(unsigned int index);
+    Value readField(unsigned int index);
 
     void print();
 

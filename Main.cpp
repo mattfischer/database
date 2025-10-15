@@ -4,6 +4,8 @@
 #include "Record.hpp"
 #include "Table.hpp"
 
+#include "RowIterators/TableIterator.hpp"
+
 #include <iostream>
 #include <sstream>
 
@@ -28,19 +30,19 @@ int main(int argc, char *argv[])
         writer.setField(0, value);
 
         table.addRow(writer);
-        table.print();
-        std::cout << "----------" << std::endl;
     }
 
-    Result result = table.allRows();
-    for(int i = 0; result.valid(); i++) {
-        void *data = result.data();
-        RecordReader reader(table.schema(), data);
+    RowIterators::TableIterator iterator(table);
+    for(int i = 0; iterator.valid(); i++) {
         std::cout << i << ": ";
-        reader.print();
+        for(int j=0; j<table.schema().fields.size(); j++) {
+            Value value = iterator.getField(j);
+            value.print();
+            std::cout << " ";
+        }
         std::cout << std::endl;
 
-        result.next();
+        iterator.next();
     }
 
     return 0;

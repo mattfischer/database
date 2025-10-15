@@ -4,7 +4,6 @@
 #include "BTree.hpp"
 #include "PageSet.hpp"
 #include "Record.hpp"
-#include "Result.hpp"
 
 #include <memory>
 
@@ -22,8 +21,6 @@ public:
 
     RowId addRow(RecordWriter &writer);
     void removeRow(RowId rowId);
-
-    Result allRows();
 
     void print();
 

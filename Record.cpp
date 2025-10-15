@@ -82,7 +82,7 @@ RecordReader::RecordReader(const RecordSchema &schema, const void *data)
     mData = reinterpret_cast<const uint8_t*>(data);
 }
 
-Value RecordReader::readValue(unsigned int index)
+Value RecordReader::readField(unsigned int index)
 {
     Value value(mSchema.fields[index].type);
 
@@ -107,17 +107,8 @@ Value RecordReader::readValue(unsigned int index)
 void RecordReader::print()
 {
     for(unsigned int i=0; i<mSchema.fields.size(); i++) {
-        Value value = readValue(i);
-        switch(value.type()) {
-            case Value::Type::Int:
-                std::cout << value.intValue() << " ";
-                break;
-            case Value::Type::Float:
-                std::cout << value.floatValue() << " ";
-                break;
-            case Value::Type::String:
-                std::cout << "\"" << value.stringValue() << "\" ";
-                break;
-        }
+        Value value = readField(i);
+        value.print();
+        std::cout << " ";
     }
 }

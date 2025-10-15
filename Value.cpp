@@ -1,5 +1,7 @@
 #include "Value.hpp"
 
+#include <iostream>
+
 Value::Value(Type type)
 : mType(type)
 {
@@ -40,3 +42,19 @@ const std::string &Value::stringValue()
     return std::get<std::string>(mValue);
 }
 
+void Value::print()
+{
+    switch(type()) {
+        case Value::Type::Int:
+            std::cout << intValue();
+            break;
+
+        case Value::Type::Float:
+            std::cout << floatValue();
+            break;
+
+        case Value::Type::String:
+            std::cout << "\"" << stringValue() << "\" ";  
+            break;
+    }
+}

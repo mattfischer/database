@@ -65,10 +65,3 @@ void Table::print()
 
     mTree.print(printCell);
 }
-
-Result Table::allRows()
-{
-    Result result(*this, mTree.first());
-
-    return result;
-}

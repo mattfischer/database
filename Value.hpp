@@ -25,6 +25,8 @@ public:
     float floatValue();
     const std::string &stringValue();
 
+    void print();
+
 private:
     Type mType;
     std::variant<int, float, std::string> mValue;
