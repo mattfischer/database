@@ -10,6 +10,7 @@ public:
 
     virtual RecordSchema schema() = 0;
 
+    virtual void start() = 0;
     virtual bool valid() = 0;
 
     virtual void prev() = 0;

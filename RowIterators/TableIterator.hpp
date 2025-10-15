@@ -11,6 +11,7 @@ namespace RowIterators {
 
         RecordSchema schema() override;
 
+        void start() override;
         bool valid() override;
 
         void prev() override;

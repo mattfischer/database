@@ -74,3 +74,54 @@ void Value::print()
             break;
     }
 }
+
+bool Value::operator<(Value &other)
+{
+    switch(type()) {
+        case Type::Int:
+            return intValue() < other.intValue();
+        case Type::Float:
+            return floatValue() < other.floatValue();
+        case Type::String:
+            return stringValue() < other.stringValue();
+    }
+}
+
+bool Value::operator<=(Value &other)
+{
+    return (*this < other) || (*this == other);
+}
+
+bool Value::operator==(Value &other)
+{
+    switch(type()) {
+        case Type::Int:
+            return intValue() == other.intValue();
+        case Type::Float:
+            return floatValue() == other.floatValue();
+        case Type::String:
+            return stringValue() == other.stringValue();
+    }
+}
+
+bool Value::operator!=(Value &other)
+{
+    return !(*this == other);
+}
+
+bool Value::operator>=(Value &other)
+{
+    return (*this > other) || (*this == other);
+}
+
+bool Value::operator>(Value &other)
+{
+    switch(type()) {
+        case Type::Int:
+            return intValue() > other.intValue();
+        case Type::Float:
+            return floatValue() > other.floatValue();
+        case Type::String:
+            return stringValue() > other.stringValue();
+    }
+}

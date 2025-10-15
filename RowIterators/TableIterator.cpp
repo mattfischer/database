@@ -4,12 +4,16 @@ namespace RowIterators {
     TableIterator::TableIterator(Table &table)
     : mTable(table)
     {
-        mPointer = mTable.tree().first();
     }
 
     RecordSchema TableIterator::schema()
     {
         return mTable.schema();
+    }
+
+    void TableIterator::start()
+    {
+        mPointer = mTable.tree().first();
     }
 
     bool TableIterator::valid()

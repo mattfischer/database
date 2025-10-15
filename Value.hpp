@@ -29,6 +29,13 @@ public:
 
     void print();
 
+    bool operator<(Value &other);
+    bool operator<=(Value &other);
+    bool operator==(Value &other);
+    bool operator!=(Value &other);
+    bool operator>=(Value &other);
+    bool operator>(Value &other);
+
 private:
     Type mType;
     std::variant<int, float, std::string> mValue;
