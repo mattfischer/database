@@ -4,15 +4,11 @@
 #include <string>
 #include <vector>
 
+#include "Value.hpp"
+
 struct RecordSchema {
     struct Field {
-        enum Type {
-            Int,
-            Float,
-            String
-        };
-
-        Type type;
+        Value::Type type;
         std::string name;
     };
 
@@ -23,20 +19,14 @@ class RecordWriter {
 public:
     RecordWriter(const RecordSchema &schema);
 
-    struct Field {
-        int intValue;
-        float floatValue;
-        std::string stringValue;
-    };
-
-    void setField(unsigned int index, const Field &value);
+    void setField(unsigned int index, const Value &value);
 
     unsigned int dataSize();
     void write(void *data);
 
 private:
     const RecordSchema &mSchema;
-    std::vector<Field> mValues;
+    std::vector<Value> mValues;
     uint16_t mExtraOffset;
 };
 
@@ -44,9 +34,7 @@ class RecordReader {
 public:
     RecordReader(const RecordSchema &schema, const void *data);
 
-    int readInt(unsigned int index);
-    float readFloat(unsigned int index);
-    std::string readString(unsigned int index);
+    Value readValue(unsigned int index);
 
     void print();
 

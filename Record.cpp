@@ -8,7 +8,7 @@ RecordWriter::RecordWriter(const RecordSchema &schema)
     mValues.resize(mSchema.fields.size());
 }
 
-void RecordWriter::setField(unsigned int index, const Field &value)
+void RecordWriter::setField(unsigned int index, const Value &value)
 {
     mValues[index] = value;
 }
@@ -19,14 +19,14 @@ unsigned int RecordWriter::dataSize()
     for(unsigned int i=0; i<mSchema.fields.size(); i++) {
         const RecordSchema::Field &field = mSchema.fields[i];
         switch(field.type) {
-            case RecordSchema::Field::Int:
+            case Value::Type::Int:
                 size += sizeof(int);
                 break;
-            case RecordSchema::Field::Float:
+            case Value::Type::Float:
                 size += sizeof(float);
                 break;
-            case RecordSchema::Field::String:
-                size += mValues[i].stringValue.size() + 1;
+            case Value::Type::String:
+                size += mValues[i].stringValue().size() + 1;
                 break;
         }
     }
@@ -45,14 +45,14 @@ void RecordWriter::write(void *data)
 
         const RecordSchema::Field &field = mSchema.fields[i];
         switch(field.type) {
-            case RecordSchema::Field::Int:
+            case Value::Type::Int:
                 dataOffset += sizeof(int);
                 break;
-            case RecordSchema::Field::Float:
+            case Value::Type::Float:
                 dataOffset += sizeof(float);
                 break;
-            case RecordSchema::Field::String:
-                dataOffset += mValues[i].stringValue.size() + 1;
+            case Value::Type::String:
+                dataOffset += mValues[i].stringValue().size() + 1;
                 break;
         }
     }
@@ -60,17 +60,17 @@ void RecordWriter::write(void *data)
     for(unsigned int i=0; i<mSchema.fields.size(); i++) {
         const RecordSchema::Field &field = mSchema.fields[i];
         switch(field.type) {
-            case RecordSchema::Field::Int:
-                *reinterpret_cast<int*>(current) = mValues[i].intValue;
+            case Value::Type::Int:
+                *reinterpret_cast<int*>(current) = mValues[i].intValue();
                 current += sizeof(int);
                 break;
-            case RecordSchema::Field::Float:
-                *reinterpret_cast<float*>(current) = mValues[i].floatValue;
+            case Value::Type::Float:
+                *reinterpret_cast<float*>(current) = mValues[i].floatValue();
                 current += sizeof(float);
                 break;
-            case RecordSchema::Field::String:
-                strcpy((char*)current, mValues[i].stringValue.data());
-                current += mValues[i].stringValue.size() + 1;
+            case Value::Type::String:
+                strcpy((char*)current, mValues[i].stringValue().data());
+                current += mValues[i].stringValue().size() + 1;
                 break;
         }
     }
@@ -82,36 +82,41 @@ RecordReader::RecordReader(const RecordSchema &schema, const void *data)
     mData = reinterpret_cast<const uint8_t*>(data);
 }
 
-int RecordReader::readInt(unsigned int index)
+Value RecordReader::readValue(unsigned int index)
 {
-    const uint16_t *offsets = reinterpret_cast<const uint16_t*>(mData);
-    return *reinterpret_cast<const int*>(mData + offsets[index]);
-}
+    Value value(mSchema.fields[index].type);
 
-float RecordReader::readFloat(unsigned int index)
-{
     const uint16_t *offsets = reinterpret_cast<const uint16_t*>(mData);
-    return *reinterpret_cast<const float*>(mData + offsets[index]);
-}
+    switch(value.type()) {
+        case Value::Type::Int:
+            value.setIntValue(*reinterpret_cast<const int*>(mData + offsets[index]));
+            break;
 
-std::string RecordReader::readString(unsigned int index)
-{
-    const uint16_t *offsets = reinterpret_cast<const uint16_t*>(mData);
-    return std::string(reinterpret_cast<const char*>(mData + offsets[index]));
+        case Value::Type::Float:
+            value.setFloatValue(*reinterpret_cast<const float*>(mData + offsets[index]));
+            break;
+
+        case Value::Type::String:
+            value.setStringValue(std::string(reinterpret_cast<const char*>(mData + offsets[index])));
+            break;
+    }
+
+    return value;
 }
 
 void RecordReader::print()
 {
     for(unsigned int i=0; i<mSchema.fields.size(); i++) {
-        switch(mSchema.fields[i].type) {
-            case RecordSchema::Field::Int:
-                std::cout << readInt(i) << " ";
+        Value value = readValue(i);
+        switch(value.type()) {
+            case Value::Type::Int:
+                std::cout << value.intValue() << " ";
                 break;
-            case RecordSchema::Field::Float:
-                std::cout << readFloat(i) << " ";
+            case Value::Type::Float:
+                std::cout << value.floatValue() << " ";
                 break;
-            case RecordSchema::Field::String:
-                std::cout << "\"" << readString(i) << "\" ";
+            case Value::Type::String:
+                std::cout << "\"" << value.stringValue() << "\" ";
                 break;
         }
     }

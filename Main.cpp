@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 {
     PageSet pageSet;
     RecordSchema schema;
-    schema.fields.push_back({RecordSchema::Field::String, "name"});
+    schema.fields.push_back({Value::Type::String, "name"});
 
     Page &rootPage = pageSet.addPage();
     Table table(rootPage, std::move(schema));
@@ -23,9 +23,9 @@ int main(int argc, char *argv[])
         RecordWriter writer(table.schema());
         std::stringstream ss;
         ss << key;
-        RecordWriter::Field field;
-        field.stringValue = ss.str();
-        writer.setField(0, field);
+        Value value(Value::Type::String);
+        value.setStringValue(ss.str());
+        writer.setField(0, value);
 
         table.addRow(writer);
         table.print();

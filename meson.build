@@ -9,6 +9,7 @@ sources = [
     'Record.cpp',
     'Result.cpp',
     'Table.cpp',
+    'Value.cpp'
 ]
 
 executable('database', sources, cpp_args: ['/std:c++17'])
