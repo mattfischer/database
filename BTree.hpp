@@ -3,27 +3,27 @@
 
 #include "PageSet.hpp"
 
-#include "TreePage.hpp"
+#include "BTreePage.hpp"
 
 #include <memory>
 #include <iostream>
 
 class BTree {
 public:
-    typedef TreePage::Key Key;
-    typedef TreePage::KeyDefinition KeyDefinition;
+    typedef BTreePage::Key Key;
+    typedef BTreePage::KeyDefinition KeyDefinition;
 
     struct Pointer {
         Page::Index pageIndex;
-        TreePage::Index cellIndex;
+        BTreePage::Index cellIndex;
     };
 
-    BTree(PageSet &pageSet, Page::Index rootIndex, std::unique_ptr<TreePage::KeyDefinition> keyDefinition);
+    BTree(PageSet &pageSet, Page::Index rootIndex, std::unique_ptr<BTreePage::KeyDefinition> keyDefinition);
 
     void initialize();
 
     Pointer lookup(Key key);
-    Pointer add(Key key, TreePage::Size size);
+    Pointer add(Key key, BTreePage::Size size);
     void remove(Pointer pointer);
 
     void *key(Pointer pointer);
@@ -37,16 +37,16 @@ public:
 
     template <typename F> void print(F printCell) {
         Page &page = mPageSet.page(mRootIndex);
-        TreePage(page, *mKeyDefinition).print("", printCell);
+        BTreePage(page, *mKeyDefinition).print("", printCell);
     }
 
 private:
     PageSet &mPageSet;
     Page::Index mRootIndex;
-    std::unique_ptr<TreePage::KeyDefinition> mKeyDefinition;
+    std::unique_ptr<BTreePage::KeyDefinition> mKeyDefinition;
 
-    TreePage findLeaf(TreePage::Key);
-    TreePage getPage(Page::Index index);
+    BTreePage findLeaf(BTreePage::Key);
+    BTreePage getPage(Page::Index index);
     int keyCompare(Key a, Key b);
 };
 

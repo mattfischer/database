@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-BTree::BTree(PageSet &pageSet, Page::Index rootIndex, std::unique_ptr<TreePage::KeyDefinition> keyDefinition)
+BTree::BTree(PageSet &pageSet, Page::Index rootIndex, std::unique_ptr<BTreePage::KeyDefinition> keyDefinition)
 : mPageSet(pageSet)
 , mKeyDefinition(std::move(keyDefinition))
 {
@@ -11,14 +11,14 @@ BTree::BTree(PageSet &pageSet, Page::Index rootIndex, std::unique_ptr<TreePage::
 
 void BTree::initialize()
 {
-    TreePage leafPage = getPage(mRootIndex);
-    leafPage.initialize(TreePage::Type::Leaf);
+    BTreePage leafPage = getPage(mRootIndex);
+    leafPage.initialize(BTreePage::Type::Leaf);
 }
 
 BTree::Pointer BTree::lookup(Key key)
 {
-    TreePage leafPage = findLeaf(key);
-    TreePage::Index index = leafPage.leafLookup(key);
+    BTreePage leafPage = findLeaf(key);
+    BTreePage::Index index = leafPage.leafLookup(key);
     return {leafPage.pageIndex(), index};
 }
 
@@ -36,16 +36,16 @@ struct KeyValue {
     std::vector<uint8_t> data;
 };
 
-BTree::Pointer BTree::add(Key key, TreePage::Size dataSize)
+BTree::Pointer BTree::add(Key key, BTreePage::Size dataSize)
 {
-    TreePage leafPage = findLeaf(key);
+    BTreePage leafPage = findLeaf(key);
     if(leafPage.leafCanAdd(key.size, dataSize)) {
         return {leafPage.pageIndex(), leafPage.leafAdd(key, dataSize)};
     }
     
-    TreePage::Index splitIndex = leafPage.numCells() / 2;
+    BTreePage::Index splitIndex = leafPage.numCells() / 2;
     KeyValue splitKey = leafPage.cellKey(splitIndex);
-    TreePage newLeafPage = leafPage.split(splitIndex);
+    BTreePage newLeafPage = leafPage.split(splitIndex);
 
     Pointer ret;
     if(keyCompare(splitKey, key) <= 0) {
@@ -59,12 +59,12 @@ BTree::Pointer BTree::add(Key key, TreePage::Size dataSize)
     Page::Index rightSplitIndex = newLeafPage.page().index();
 
     while(true) {
-        TreePage leftSplitPage = getPage(leftSplitIndex);
-        TreePage rightSplitPage = getPage(rightSplitIndex);
+        BTreePage leftSplitPage = getPage(leftSplitIndex);
+        BTreePage rightSplitPage = getPage(rightSplitIndex);
 
         if(parentPageIndex == Page::kInvalidIndex) {
-            TreePage indirectPage(mPageSet.addPage(), *mKeyDefinition);
-            indirectPage.initialize(TreePage::Type::Indirect);
+            BTreePage indirectPage(mPageSet.addPage(), *mKeyDefinition);
+            indirectPage.initialize(BTreePage::Type::Indirect);
 
             indirectPage.indirectPushTail(Key(), leftSplitPage);
             indirectPage.indirectPushTail(splitKey, rightSplitPage);
@@ -72,14 +72,14 @@ BTree::Pointer BTree::add(Key key, TreePage::Size dataSize)
             mRootIndex = indirectPage.page().index();
             break;
         } else {
-            TreePage indirectPage = getPage(parentPageIndex);
+            BTreePage indirectPage = getPage(parentPageIndex);
             if(indirectPage.indirectCanAdd(splitKey.data.size())) {
                 indirectPage.indirectAdd(splitKey, rightSplitPage);
                 break;
             } else {
                 splitIndex = indirectPage.numCells() / 2;
                 KeyValue indirectSplitKey = indirectPage.cellKey(splitIndex);
-                TreePage newIndirectPage = indirectPage.split(splitIndex);
+                BTreePage newIndirectPage = indirectPage.split(splitIndex);
 
                 if(keyCompare(indirectSplitKey, splitKey) <= 0) {
                     newIndirectPage.indirectAdd(splitKey, rightSplitPage);
@@ -100,26 +100,26 @@ BTree::Pointer BTree::add(Key key, TreePage::Size dataSize)
 
 void BTree::remove(Pointer pointer)
 {
-    TreePage leafPage = getPage(pointer.pageIndex);
+    BTreePage leafPage = getPage(pointer.pageIndex);
     leafPage.leafRemove(pointer.cellIndex);
 
     Page::Index index = leafPage.page().index();
 
     while(true) {
-        TreePage page = getPage(index);
+        BTreePage page = getPage(index);
         if(!page.isDeficient()) {
             break;
         }
 
         if(page.parent() == Page::kInvalidIndex) {
-            if(page.type() == TreePage::Indirect && page.numCells() == 1) {
+            if(page.type() == BTreePage::Indirect && page.numCells() == 1) {
                 mRootIndex = page.indirectPageIndex(0);
                 mPageSet.deletePage(page.page());
                 getPage(mRootIndex).setParent(Page::kInvalidIndex);
             }
             break;
         }
-        TreePage parentPage = getPage(page.parent());
+        BTreePage parentPage = getPage(page.parent());
         parentPage.indirectRectifyDeficientChild(page);
 
         index = parentPage.page().index();
@@ -131,7 +131,7 @@ void *BTree::key(Pointer pointer)
     if(pointer.pageIndex == Page::kInvalidIndex) {
         return nullptr;
     } else {
-        TreePage page = getPage(pointer.pageIndex);
+        BTreePage page = getPage(pointer.pageIndex);
         
         return page.cellKey(pointer.cellIndex).data;    
     }
@@ -142,7 +142,7 @@ void *BTree::data(Pointer pointer)
     if(pointer.pageIndex == Page::kInvalidIndex) {
         return nullptr;
     } else {
-        TreePage page = getPage(pointer.pageIndex);
+        BTreePage page = getPage(pointer.pageIndex);
         return page.cellData(pointer.cellIndex);
     }
 }
@@ -151,8 +151,8 @@ BTree::Pointer BTree::first()
 {
     Page::Index index = mRootIndex;
     while(true) {
-        TreePage page = getPage(index);
-        if(page.type() == TreePage::Type::Leaf) {
+        BTreePage page = getPage(index);
+        if(page.type() == BTreePage::Type::Leaf) {
             break;
         }
         
@@ -166,23 +166,23 @@ BTree::Pointer BTree::last()
 {
     Page::Index index = mRootIndex;
     while(true) {
-        TreePage page = getPage(index);
-        if(page.type() == TreePage::Type::Leaf) {
+        BTreePage page = getPage(index);
+        if(page.type() == BTreePage::Type::Leaf) {
             break;
         }
         
         index = page.indirectPageIndex(page.numCells() - 1);
     }
 
-    TreePage page = getPage(index);
-    return {index, (TreePage::Index)(page.numCells() - 1)};
+    BTreePage page = getPage(index);
+    return {index, (BTreePage::Index)(page.numCells() - 1)};
 }
 
 BTree::Pointer BTree::next(Pointer pointer)
 {
-    TreePage page = getPage(pointer.pageIndex);
+    BTreePage page = getPage(pointer.pageIndex);
     if(pointer.cellIndex < page.numCells() - 1) {
-        return {pointer.pageIndex, (TreePage::Index)(pointer.cellIndex + 1)};
+        return {pointer.pageIndex, (BTreePage::Index)(pointer.cellIndex + 1)};
     } else {
         return {page.nextSibling(), 0};
     }
@@ -190,24 +190,24 @@ BTree::Pointer BTree::next(Pointer pointer)
 
 BTree::Pointer BTree::prev(Pointer pointer)
 {
-    TreePage page = getPage(pointer.pageIndex);
+    BTreePage page = getPage(pointer.pageIndex);
     if(pointer.cellIndex > 0) {
-        return {pointer.pageIndex, (TreePage::Index)(pointer.cellIndex - 1)};
+        return {pointer.pageIndex, (BTreePage::Index)(pointer.cellIndex - 1)};
     } else {
         if(page.prevSibling() == Page::kInvalidIndex) {
             return {Page::kInvalidIndex, 0};
         } else {
-            return {page.prevSibling(), (TreePage::Index)(getPage(page.prevSibling()).numCells() - 1)};
+            return {page.prevSibling(), (BTreePage::Index)(getPage(page.prevSibling()).numCells() - 1)};
         }
     }
 }
 
-TreePage BTree::findLeaf(Key key)
+BTreePage BTree::findLeaf(Key key)
 {
     Page::Index index = mRootIndex;
     while(true) {
-        TreePage page = getPage(index);
-        if(page.type() == TreePage::Type::Leaf) {
+        BTreePage page = getPage(index);
+        if(page.type() == BTreePage::Type::Leaf) {
             break;
         }
         
@@ -217,9 +217,9 @@ TreePage BTree::findLeaf(Key key)
     return getPage(index);
 }
 
-TreePage BTree::getPage(Page::Index index)
+BTreePage BTree::getPage(Page::Index index)
 {
-    return TreePage(mPageSet.page(index), *mKeyDefinition);
+    return BTreePage(mPageSet.page(index), *mKeyDefinition);
 }
 
 int BTree::keyCompare(Key a, Key b)

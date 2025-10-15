@@ -1,8 +1,8 @@
 #include "Table.hpp"
 
-class RowIdKeyDefinition : public TreePage::KeyDefinition {
+class RowIdKeyDefinition : public BTreePage::KeyDefinition {
 public:
-    virtual TreePage::Size fixedSize() override { return sizeof(Table::RowId); }
+    virtual BTreePage::Size fixedSize() override { return sizeof(Table::RowId); }
     virtual int compare(BTree::Key a, BTree::Key b) override {
         Table::RowId ar = *reinterpret_cast<Table::RowId*>(a.data);
         Table::RowId br = *reinterpret_cast<Table::RowId*>(b.data);

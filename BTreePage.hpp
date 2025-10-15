@@ -1,11 +1,11 @@
-#ifndef TREEPAGE_HPP
-#define TREEPAGE_HPP
+#ifndef BTREEPAGE_HPP
+#define BTREEPAGE_HPP
 
 #include "PageSet.hpp"
 
 #include <string>
 
-class TreePage {
+class BTreePage {
 public:
     typedef uint16_t Index;
     static const Index kInvalidIndex = UINT16_MAX;
@@ -36,7 +36,7 @@ public:
         virtual void print(Key key) = 0;
     };
 
-    TreePage(Page &page, KeyDefinition &keyDefinition);
+    BTreePage(Page &page, KeyDefinition &keyDefinition);
 
     void initialize(Type type);
 
@@ -66,7 +66,7 @@ public:
 
     void removeCell(Index index);
 
-    TreePage split(Index index);
+    BTreePage split(Index index);
 
     bool isDeficient();
     bool canSupplyItem(Index index);
@@ -77,12 +77,12 @@ public:
     void leafRemove(Index index);
 
     bool indirectCanAdd(size_t keySize);
-    void indirectAdd(Key key, TreePage &childPage);
+    void indirectAdd(Key key, BTreePage &childPage);
     Page::Index indirectPageIndex(Index index);
     Page::Index indirectLookup(Key key);
-    void indirectRectifyDeficientChild(TreePage &childPage);
-    void indirectPushHead(Key oldHeadKey, TreePage &childPage);
-    void indirectPushTail(Key key, TreePage &childPage);
+    void indirectRectifyDeficientChild(BTreePage &childPage);
+    void indirectPushHead(Key oldHeadKey, BTreePage &childPage);
+    void indirectPushTail(Key key, BTreePage &childPage);
     void indirectPopHead();
     void indirectPopTail();
 
@@ -121,22 +121,22 @@ private:
     void defragPage();
 
     int keyCompare(Key a, Key b);
-    TreePage getPage(Page::Index index);
+    BTreePage getPage(Page::Index index);
 
     PageSet &pageSet();
 
-    void indirectRotateRight(TreePage &leftChild, TreePage &rightChild, Index index);
-    void indirectRotateLeft(TreePage &leftChild, TreePage &rightChild, Index index);
-    void indirectMergeChildren(TreePage &leftChild, TreePage &rightChild, Index index);
+    void indirectRotateRight(BTreePage &leftChild, BTreePage &rightChild, Index index);
+    void indirectRotateLeft(BTreePage &leftChild, BTreePage &rightChild, Index index);
+    void indirectMergeChildren(BTreePage &leftChild, BTreePage &rightChild, Index index);
 
     Page &mPage;
     KeyDefinition &mKeyDefinition;
 };
 
-template <typename F> void TreePage::print(const std::string &prefix, F printCell)
+template <typename F> void BTreePage::print(const std::string &prefix, F printCell)
 {
     switch(type()) {
-        case TreePage::Type::Leaf:
+        case BTreePage::Type::Leaf:
             std::cout << prefix << "# Leaf page " << pageIndex();
             if(parent() != Page::kInvalidIndex) {
                 std::cout << " (parent " << parent() << ")";
@@ -151,7 +151,7 @@ template <typename F> void TreePage::print(const std::string &prefix, F printCel
                 std::cout << std::endl;
             }
             break;
-        case TreePage::Type::Indirect:
+        case BTreePage::Type::Indirect:
             std::cout << prefix << "# Indirect page " << pageIndex();
             if(parent() != Page::kInvalidIndex) {
                 std::cout << " (parent " << parent() << ")";
@@ -168,7 +168,7 @@ template <typename F> void TreePage::print(const std::string &prefix, F printCel
                 std::cout << ": " << std::endl;
 
                 Page::Index index = indirectPageIndex(i);
-                TreePage(pageSet().page(index), mKeyDefinition).print(prefix + "  ", printCell);
+                BTreePage(pageSet().page(index), mKeyDefinition).print(prefix + "  ", printCell);
             }
             break;
     }
