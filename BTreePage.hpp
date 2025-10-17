@@ -36,7 +36,15 @@ public:
         virtual void print(Key key) = 0;
     };
 
-    BTreePage(Page &page, KeyDefinition &keyDefinition);
+    class DataDefinition {
+    public:
+        virtual ~DataDefinition() = default;
+
+        virtual Size fixedSize() = 0;
+        virtual void print(void *data) = 0;
+    };
+
+    BTreePage(Page &page, KeyDefinition &keyDefinition, DataDefinition &dataDefinition);
 
     void initialize(Type type);
 
@@ -86,7 +94,7 @@ public:
     void indirectPopHead();
     void indirectPopTail();
 
-    template <typename F> void print(const std::string &prefix, F printCell);
+    void print(const std::string &prefix);
 
 private:
     struct Header {
@@ -131,47 +139,7 @@ private:
 
     Page &mPage;
     KeyDefinition &mKeyDefinition;
+    DataDefinition &mDataDefinition;
 };
-
-template <typename F> void BTreePage::print(const std::string &prefix, F printCell)
-{
-    switch(type()) {
-        case BTreePage::Type::Leaf:
-            std::cout << prefix << "# Leaf page " << pageIndex();
-            if(parent() != Page::kInvalidIndex) {
-                std::cout << " (parent " << parent() << ")";
-            }
-            std::cout << std::endl;
-
-            for(Index i=0; i<numCells(); i++) {
-                std::cout << prefix;
-                mKeyDefinition.print(cellKey(i));
-                std::cout << ": ";
-                printCell(cellData(i));
-                std::cout << std::endl;
-            }
-            break;
-        case BTreePage::Type::Indirect:
-            std::cout << prefix << "# Indirect page " << pageIndex();
-            if(parent() != Page::kInvalidIndex) {
-                std::cout << " (parent " << parent() << ")";
-            }
-            std::cout << std::endl;
-
-            for(Index i=0; i<numCells(); i++) {
-                std::cout << prefix;
-                if(i == 0) {
-                    std::cout << "_";
-                } else {
-                    mKeyDefinition.print(cellKey(i));
-                }
-                std::cout << ": " << std::endl;
-
-                Page::Index index = indirectPageIndex(i);
-                BTreePage(pageSet().page(index), mKeyDefinition).print(prefix + "  ", printCell);
-            }
-            break;
-    }
-}
 
 #endif

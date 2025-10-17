@@ -2,9 +2,10 @@
 
 #include <iostream>
 
-BTree::BTree(PageSet &pageSet, Page::Index rootIndex, std::unique_ptr<BTreePage::KeyDefinition> keyDefinition)
+BTree::BTree(PageSet &pageSet, Page::Index rootIndex, std::unique_ptr<KeyDefinition> keyDefinition, std::unique_ptr<DataDefinition> dataDefinition)
 : mPageSet(pageSet)
 , mKeyDefinition(std::move(keyDefinition))
+, mDataDefinition(std::move(dataDefinition))
 {
     mRootIndex = rootIndex;
 }
@@ -63,7 +64,7 @@ BTree::Pointer BTree::add(Key key, BTreePage::Size dataSize)
         BTreePage rightSplitPage = getPage(rightSplitIndex);
 
         if(parentPageIndex == Page::kInvalidIndex) {
-            BTreePage indirectPage(mPageSet.addPage(), *mKeyDefinition);
+            BTreePage indirectPage(mPageSet.addPage(), *mKeyDefinition, *mDataDefinition);
             indirectPage.initialize(BTreePage::Type::Indirect);
 
             indirectPage.indirectPushTail(Key(), leftSplitPage);
@@ -202,6 +203,13 @@ BTree::Pointer BTree::prev(Pointer pointer)
     }
 }
 
+void BTree::print()
+ {
+    Page &page = mPageSet.page(mRootIndex);
+    BTreePage(page, *mKeyDefinition, *mDataDefinition).print("");
+}
+
+
 BTreePage BTree::findLeaf(Key key)
 {
     Page::Index index = mRootIndex;
@@ -219,7 +227,7 @@ BTreePage BTree::findLeaf(Key key)
 
 BTreePage BTree::getPage(Page::Index index)
 {
-    return BTreePage(mPageSet.page(index), *mKeyDefinition);
+    return BTreePage(mPageSet.page(index), *mKeyDefinition, *mDataDefinition);
 }
 
 int BTree::keyCompare(Key a, Key b)

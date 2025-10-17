@@ -1,6 +1,6 @@
 #include "Table.hpp"
 
-class RowIdKeyDefinition : public BTreePage::KeyDefinition {
+class RowIdKeyDefinition : public BTree::KeyDefinition {
 public:
     virtual BTreePage::Size fixedSize() override { return sizeof(Table::RowId); }
     virtual int compare(BTree::Key a, BTree::Key b) override {
@@ -15,10 +15,25 @@ public:
     }
 };
 
+class RowDataDefinition : public BTree::DataDefinition {
+public:
+    RowDataDefinition(RecordSchema &schema) : mSchema(schema) {}
+    virtual BTreePage::Size fixedSize() { return 0; }
+
+    void print(void *data)
+    {
+        RecordReader reader(mSchema, data);
+        reader.print();
+    }
+
+private:
+    RecordSchema &mSchema;
+};
+
 Table::Table(Page &rootPage, RecordSchema schema)
 : mPageSet(rootPage.pageSet())
 , mSchema(std::move(schema))
-, mTree(mPageSet, rootPage.index(), std::make_unique<RowIdKeyDefinition>())
+, mTree(mPageSet, rootPage.index(), std::make_unique<RowIdKeyDefinition>(), std::make_unique<RowDataDefinition>(mSchema))
 {
 }
 
@@ -58,10 +73,5 @@ void Table::removeRow(RowId rowId)
 
 void Table::print()
 {
-    auto printCell = [&](void *data) {
-        RecordReader reader(mSchema, data);
-        reader.print();
-    };
-
-    mTree.print(printCell);
+    mTree.print();
 }

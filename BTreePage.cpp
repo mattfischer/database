@@ -3,9 +3,10 @@
 #include <algorithm>
 #include <iostream>
 
-BTreePage::BTreePage(Page &page, KeyDefinition &keyDefinition)
+BTreePage::BTreePage(Page &page, KeyDefinition &keyDefinition, DataDefinition &dataDefinition)
 : mPage(page)
 , mKeyDefinition(keyDefinition)
+, mDataDefinition(dataDefinition)
 {
 }
 
@@ -129,15 +130,12 @@ BTreePage::Size BTreePage::cellDataSize(Index index)
     uint16_t offset = cellOffset(index);
     BTreePage::Size keySize = cellTotalKeySize(index);
 
-    switch(type()) {
-        case Type::Leaf:
-            return *reinterpret_cast<uint16_t*>(mPage.data(offset + keySize));
-        
-        case Type::Indirect:
-            return sizeof(Page::Index);
+    uint16_t dataSize = (type() == Type::Leaf) ? mDataDefinition.fixedSize() : sizeof(Page::Index);
+    if(dataSize == 0) {
+        dataSize = *reinterpret_cast<uint16_t*>(mPage.data(offset + keySize));
     }
 
-    return 0;
+    return dataSize;
 }
 
 BTreePage::Size BTreePage::cellTotalDataSize(Index index)
@@ -145,15 +143,12 @@ BTreePage::Size BTreePage::cellTotalDataSize(Index index)
     uint16_t offset = cellOffset(index);
     BTreePage::Size keySize = cellTotalKeySize(index);
 
-    switch(type()) {
-        case Type::Leaf:
-            return sizeof(uint16_t) + *reinterpret_cast<uint16_t*>(mPage.data(offset + keySize));
-        
-        case Type::Indirect:
-            return sizeof(Page::Index);
+    uint16_t totalDataSize = (type() == Type::Leaf) ? mDataDefinition.fixedSize() : sizeof(Page::Index);
+    if(totalDataSize == 0) {
+        totalDataSize = sizeof(uint16_t) + *reinterpret_cast<uint16_t*>(mPage.data(offset + keySize));
     }
 
-    return 0;
+    return totalDataSize;
 }
 
 void BTreePage::setCellKey(Index index, Key key)
@@ -219,7 +214,7 @@ void BTreePage::removeCells(Index begin, Index end)
 
 BTreePage BTreePage::split(Index index)
 {
-    BTreePage newPage(pageSet().addPage(), mKeyDefinition);
+    BTreePage newPage(pageSet().addPage(), mKeyDefinition, mDataDefinition);
     newPage.initialize(type());
     newPage.setParent(parent());
 
@@ -445,6 +440,47 @@ void BTreePage::indirectPopTail()
     removeCell(numCells() - 1);
 }
 
+void BTreePage::print(const std::string &prefix)
+{
+    switch(type()) {
+        case BTreePage::Type::Leaf:
+            std::cout << prefix << "# Leaf page " << pageIndex();
+            if(parent() != Page::kInvalidIndex) {
+                std::cout << " (parent " << parent() << ")";
+            }
+            std::cout << std::endl;
+
+            for(Index i=0; i<numCells(); i++) {
+                std::cout << prefix;
+                mKeyDefinition.print(cellKey(i));
+                std::cout << ": ";
+                mDataDefinition.print(cellData(i));
+                std::cout << std::endl;
+            }
+            break;
+        case BTreePage::Type::Indirect:
+            std::cout << prefix << "# Indirect page " << pageIndex();
+            if(parent() != Page::kInvalidIndex) {
+                std::cout << " (parent " << parent() << ")";
+            }
+            std::cout << std::endl;
+
+            for(Index i=0; i<numCells(); i++) {
+                std::cout << prefix;
+                if(i == 0) {
+                    std::cout << "_";
+                } else {
+                    mKeyDefinition.print(cellKey(i));
+                }
+                std::cout << ": " << std::endl;
+
+                Page::Index index = indirectPageIndex(i);
+                getPage(index).print(prefix + "  ");
+            }
+            break;
+    }
+}
+
 BTreePage::Header &BTreePage::header()
 {
     return *reinterpret_cast<Header*>(mPage.data(0));
@@ -486,10 +522,11 @@ uint16_t BTreePage::cellKeyOffset(Index index)
 
 uint16_t BTreePage::cellDataOffset(Index index)
 {
-    uint16_t offset = cellOffset(index);
-    BTreePage::Size keySize = cellTotalKeySize(index);
-
-    return offset + keySize + ((type() == Type::Leaf) ? sizeof(uint16_t) : 0);
+    uint16_t offset = cellOffset(index) + cellTotalKeySize(index);
+    if(type() == Type::Leaf && mDataDefinition.fixedSize() == 0) {
+        offset += sizeof(uint16_t);
+    }
+    return offset;
 }
 
 uint16_t BTreePage::allocateCell(Key key, Size dataSize)
@@ -505,9 +542,9 @@ uint16_t BTreePage::allocateCell(Key key, Size dataSize)
         }
     }
 
-    Size totalDataSize = dataSize;
-    if(type() == Type::Leaf) {
-        totalDataSize += sizeof(uint16_t);
+    Size totalDataSize = (type() == Type::Leaf) ? mDataDefinition.fixedSize() : sizeof(Page::Index);
+    if(totalDataSize == 0) {
+        totalDataSize = dataSize + sizeof(uint16_t);
     }
 
     Size totalSize = totalKeySize + totalDataSize;
@@ -527,7 +564,7 @@ uint16_t BTreePage::allocateCell(Key key, Size dataSize)
         }
     }
 
-    if(type() == Type::Leaf) {
+    if(type() == Type::Leaf && mDataDefinition.fixedSize() == 0) {
         *reinterpret_cast<uint16_t*>(mPage.data(offset + totalKeySize)) = dataSize;
     }
 
@@ -542,9 +579,9 @@ bool BTreePage::canAllocateCell(Size keySize, Size dataSize)
         totalKeySize = keySize + sizeof(uint16_t);
     }
 
-    Size totalDataSize = dataSize;
-    if(type() == Type::Leaf) {
-        totalDataSize += sizeof(uint16_t);
+    Size totalDataSize = (type() == Type::Leaf) ? mDataDefinition.fixedSize() : sizeof(Page::Index);
+    if(totalDataSize == 0) {
+        totalDataSize = dataSize + sizeof(uint16_t);
     }
 
     Size totalSize = totalKeySize + totalDataSize;
@@ -598,7 +635,7 @@ int BTreePage::keyCompare(Key a, Key b)
 
 BTreePage BTreePage::getPage(Page::Index index)
 {
-    return BTreePage(pageSet().page(index), mKeyDefinition);
+    return BTreePage(pageSet().page(index), mKeyDefinition, mDataDefinition);
 }
 
 void BTreePage::defragPage()

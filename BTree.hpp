@@ -12,13 +12,14 @@ class BTree {
 public:
     typedef BTreePage::Key Key;
     typedef BTreePage::KeyDefinition KeyDefinition;
+    typedef BTreePage::DataDefinition DataDefinition;
 
     struct Pointer {
         Page::Index pageIndex;
         BTreePage::Index cellIndex;
     };
 
-    BTree(PageSet &pageSet, Page::Index rootIndex, std::unique_ptr<BTreePage::KeyDefinition> keyDefinition);
+    BTree(PageSet &pageSet, Page::Index rootIndex, std::unique_ptr<KeyDefinition> keyDefinition, std::unique_ptr<DataDefinition> dataDefinition);
 
     void initialize();
 
@@ -35,17 +36,15 @@ public:
     Pointer next(Pointer pointer);
     Pointer prev(Pointer pointer);
 
-    template <typename F> void print(F printCell) {
-        Page &page = mPageSet.page(mRootIndex);
-        BTreePage(page, *mKeyDefinition).print("", printCell);
-    }
+    void print();
 
 private:
     PageSet &mPageSet;
     Page::Index mRootIndex;
-    std::unique_ptr<BTreePage::KeyDefinition> mKeyDefinition;
+    std::unique_ptr<KeyDefinition> mKeyDefinition;
+    std::unique_ptr<DataDefinition> mDataDefinition;
 
-    BTreePage findLeaf(BTreePage::Key);
+    BTreePage findLeaf(Key);
     BTreePage getPage(Page::Index index);
     int keyCompare(Key a, Key b);
 };
