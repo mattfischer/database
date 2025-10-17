@@ -53,6 +53,16 @@ Index::Index(Table &table, std::vector<unsigned int> keys)
     mTree->initialize();
 }
 
+Table &Index::table()
+{
+    return mTable;
+}
+
+BTree &Index::tree()
+{
+    return *mTree;
+}
+
 void Index::add(RecordWriter &writer, RowId rowId)
 {
     RecordWriter keyWriter(mKeySchema);

@@ -14,6 +14,9 @@ public:
 
     typedef uint32_t RowId;
 
+    Table &table();
+    BTree &tree();
+
     void add(RecordWriter &writer, RowId rowId);
     void print();
 

@@ -8,6 +8,7 @@ sources = [
     'Page.cpp',
     'PageSet.cpp',
     'Record.cpp',
+    'RowIterators/IndexIterator.cpp',
     'RowIterators/ProjectIterator.cpp',
     'RowIterators/SelectIterator.cpp',
     'RowIterators/TableIterator.cpp',

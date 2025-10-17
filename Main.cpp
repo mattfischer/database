@@ -4,6 +4,7 @@
 #include "Record.hpp"
 #include "Table.hpp"
 
+#include "RowIterators/IndexIterator.hpp"
 #include "RowIterators/ProjectIterator.hpp"
 #include "RowIterators/SelectIterator.hpp"
 #include "RowIterators/TableIterator.hpp"
@@ -44,6 +45,9 @@ int main(int argc, char *argv[])
     keys.push_back(0);
     table.addIndex(std::move(keys));
 
+    keys.push_back(1);
+    table.addIndex(std::move(keys));
+
     srand(12345);
     for(int i=0; i<64; i++) {
         int key = rand() % 1000;
@@ -54,7 +58,11 @@ int main(int argc, char *argv[])
         writer.setField(1, Value(key));
         table.addRow(writer);
     }
+    table.print();
     table.indices()[0]->print();
+    std::cout << std::endl;
+    table.indices()[1]->print();
+    std::cout << std::endl;
 
     RowIterators::TableIterator tableIterator(table);
     tableIterator.start();
@@ -63,17 +71,17 @@ int main(int argc, char *argv[])
     std::cout << "-----------" << std::endl;
     std::cout << std::endl;
 
-    std::unique_ptr<RowPredicate> predicate1 = std::make_unique<RowPredicates::ComparePredicate>(1, RowPredicates::ComparePredicate::Comparison::LessThan, Value(100));
-    std::unique_ptr<RowPredicate> predicate2 = std::make_unique<RowPredicates::ComparePredicate>(1, RowPredicates::ComparePredicate::Comparison::GreaterThan, Value(800));
-    std::unique_ptr<RowPredicate> predicate = std::make_unique<RowPredicates::LogicalPredicate>(std::move(predicate1), RowPredicates::LogicalPredicate::Operation::Or, std::move(predicate2));
+    RowIterators::IndexIterator indexIterator(*table.indices()[0]);
+    indexIterator.start();
+    printIterator(indexIterator);
 
-    std::unique_ptr<RowIterator> selectIterator = std::make_unique<RowIterators::SelectIterator>(std::make_unique<RowIterators::TableIterator>(table), std::move(predicate));
-    std::vector<RowIterators::ProjectIterator::FieldDefinition> fields;
-    fields.push_back({1, "value"});
-    fields.push_back({0, "name"});
-    RowIterators::ProjectIterator projectIterator(std::move(selectIterator), std::move(fields));
-    projectIterator.start();
-    printIterator(projectIterator);
+    std::cout << std::endl;
+    std::cout << "-----------" << std::endl;
+    std::cout << std::endl;
+
+    RowIterators::IndexIterator indexIterator2(*table.indices()[1]);
+    indexIterator2.start();
+    printIterator(indexIterator2);
 
     return 0;
 }
