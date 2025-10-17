@@ -1,0 +1,72 @@
+#include "Index.hpp"
+
+#include "Table.hpp"
+
+class IndexKeyDefinition : public BTree::KeyDefinition {
+public:
+    IndexKeyDefinition(RecordSchema &schema) : mSchema(schema) {}
+
+    virtual BTreePage::Size fixedSize() override { return 0; }
+    virtual int compare(BTree::Key a, BTree::Key b) override {
+        RecordReader readerA(mSchema, a.data);
+        RecordReader readerB(mSchema, b.data);
+        for(int i=0; i<mSchema.fields.size(); i++) {
+            Value valueA = readerA.readField(i);
+            Value valueB = readerB.readField(i);
+
+            if(valueA < valueB) return -1;
+            if(valueA > valueB) return 1;
+        }
+        return 0;
+    }
+
+    virtual void print(BTree::Key key) override {
+        RecordReader reader(mSchema, key.data);
+        reader.print();
+    }
+
+private:
+    RecordSchema &mSchema;
+};
+
+class RowIdDataDefinition : public BTree::DataDefinition {
+public:
+    virtual BTreePage::Size fixedSize() override { return sizeof(Table::RowId); }
+
+    void print(void *data)
+    {
+        std::cout << *reinterpret_cast<Table::RowId*>(data);
+    }
+};
+
+Index::Index(Table &table, std::vector<unsigned int> keys)
+: mTable(table)
+, mKeys(std::move(keys))
+{
+    for(unsigned int index : mKeys) {
+        mKeySchema.fields.push_back(table.schema().fields[index]);
+    }
+
+    PageSet &pageSet = mTable.tree().pageSet();
+    Page &rootPage = pageSet.addPage();
+    mTree = std::make_unique<BTree>(pageSet, rootPage.index(), std::make_unique<IndexKeyDefinition>(mKeySchema), std::make_unique<RowIdDataDefinition>());
+    mTree->initialize();
+}
+
+void Index::add(RecordWriter &writer, RowId rowId)
+{
+    RecordWriter keyWriter(mKeySchema);
+    for(unsigned int i=0; i<mKeys.size(); i++) {
+        keyWriter.setField(i, writer.field(mKeys[i]));
+    }
+    std::vector<uint8_t> keyData(keyWriter.dataSize());
+    keyWriter.write(keyData.data());
+    BTree::Pointer pointer = mTree->add(BTree::Key(keyData.data(), keyData.size()), sizeof(RowId));
+    void *data = mTree->data(pointer);
+    std::memcpy(data, &rowId, sizeof(rowId));
+}
+
+void Index::print()
+{
+    mTree->print();
+}

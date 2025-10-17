@@ -20,6 +20,7 @@ public:
     RecordWriter(const RecordSchema &schema);
 
     void setField(unsigned int index, const Value &value);
+    Value &field(unsigned int index);
 
     unsigned int dataSize();
     void write(void *data);

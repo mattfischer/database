@@ -13,6 +13,11 @@ void RecordWriter::setField(unsigned int index, const Value &value)
     mValues[index] = value;
 }
 
+Value &RecordWriter::field(unsigned int index)
+{
+    return mValues[index];
+}
+
 unsigned int RecordWriter::dataSize()
 {
     unsigned int size = mSchema.fields.size() * sizeof(uint16_t);

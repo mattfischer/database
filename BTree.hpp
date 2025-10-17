@@ -23,6 +23,8 @@ public:
 
     void initialize();
 
+    PageSet &pageSet();
+
     Pointer lookup(Key key);
     Pointer add(Key key, BTreePage::Size size);
     void remove(Pointer pointer);

@@ -5,6 +5,8 @@
 #include "PageSet.hpp"
 #include "Record.hpp"
 
+#include "Index.hpp"
+
 #include <memory>
 
 class Table {
@@ -16,11 +18,14 @@ public:
     void initialize();
 
     BTree &tree();
+    std::vector<std::unique_ptr<Index>> &indices();
 
     RecordSchema &schema();
 
     RowId addRow(RecordWriter &writer);
     void removeRow(RowId rowId);
+
+    void addIndex(std::vector<unsigned int> keys);
 
     void print();
 
@@ -29,5 +34,6 @@ private:
     RecordSchema mSchema;
     BTree mTree;
     RowId mNextRowId;
+    std::vector<std::unique_ptr<Index>> mIndices;
 };
 #endif

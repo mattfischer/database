@@ -18,9 +18,9 @@ public:
 class RowDataDefinition : public BTree::DataDefinition {
 public:
     RowDataDefinition(RecordSchema &schema) : mSchema(schema) {}
-    virtual BTreePage::Size fixedSize() { return 0; }
+    BTreePage::Size fixedSize() override { return 0; }
 
-    void print(void *data)
+    void print(void *data) override
     {
         RecordReader reader(mSchema, data);
         reader.print();
@@ -53,12 +53,21 @@ BTree &Table::tree()
     return mTree;
 }
 
+std::vector<std::unique_ptr<Index>> &Table::indices()
+{
+    return mIndices;
+}
+
 Table::RowId Table::addRow(RecordWriter &writer)
 {
     RowId rowId = mNextRowId;
     BTree::Pointer pointer = mTree.add(BTree::Key(&rowId, sizeof(rowId)), writer.dataSize());
     void *data = mTree.data(pointer);
     writer.write(data);
+
+    for(auto &index : mIndices) {
+        index->add(writer, rowId);
+    }
 
     mNextRowId++;
 
@@ -69,6 +78,11 @@ void Table::removeRow(RowId rowId)
 {
     BTree::Pointer pointer = mTree.lookup(BTree::Key(&rowId, sizeof(rowId)));
     mTree.remove(pointer);
+}
+
+void Table::addIndex(std::vector<unsigned int> keys)
+{
+    mIndices.push_back(std::make_unique<Index>(*this, std::move(keys)));
 }
 
 void Table::print()

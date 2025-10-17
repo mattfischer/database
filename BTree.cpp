@@ -16,6 +16,11 @@ void BTree::initialize()
     leafPage.initialize(BTreePage::Type::Leaf);
 }
 
+PageSet &BTree::pageSet()
+{
+    return mPageSet;
+}
+
 BTree::Pointer BTree::lookup(Key key)
 {
     BTreePage leafPage = findLeaf(key);

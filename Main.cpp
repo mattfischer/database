@@ -40,6 +40,10 @@ int main(int argc, char *argv[])
     Table table(rootPage, std::move(schema));
     table.initialize();
 
+    std::vector<unsigned int> keys;
+    keys.push_back(0);
+    table.addIndex(std::move(keys));
+
     srand(12345);
     for(int i=0; i<64; i++) {
         int key = rand() % 1000;
@@ -50,6 +54,7 @@ int main(int argc, char *argv[])
         writer.setField(1, Value(key));
         table.addRow(writer);
     }
+    table.indices()[0]->print();
 
     RowIterators::TableIterator tableIterator(table);
     tableIterator.start();
