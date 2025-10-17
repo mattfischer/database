@@ -6,7 +6,7 @@ namespace RowIterators {
     {
     }
 
-    RecordSchema TableIterator::schema()
+    RecordSchema &TableIterator::schema()
     {
         return mTable.schema();
     }
