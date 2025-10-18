@@ -18,6 +18,7 @@ public:
     BTree &tree();
 
     void add(RecordWriter &writer, RowId rowId);
+    void remove(RowId rowId);
     void print();
 
 private:

@@ -76,6 +76,22 @@ void Index::add(RecordWriter &writer, RowId rowId)
     std::memcpy(data, &rowId, sizeof(rowId));
 }
 
+void Index::remove(RowId rowId)
+{
+    BTree::Pointer tablePointer = mTable.tree().lookup(BTree::Key(&rowId, sizeof(rowId)));
+    void *data = mTable.tree().data(tablePointer);
+    RecordReader reader(mTable.schema(), data);
+
+    RecordWriter keyWriter(mKeySchema);
+    for(unsigned int i=0; i<mKeys.size(); i++) {
+        keyWriter.setField(i, reader.readField(mKeys[i]));
+    }
+    std::vector<uint8_t> keyData(keyWriter.dataSize());
+    keyWriter.write(keyData.data());
+    BTree::Pointer indexPointer = mTree->lookup(BTree::Key(keyData.data(), keyData.size()));
+    mTree->remove(indexPointer);
+}
+
 void Index::print()
 {
     mTree->print();
