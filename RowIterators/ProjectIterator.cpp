@@ -25,11 +25,6 @@ namespace RowIterators {
         return mInputIterator->valid();
     }
 
-    void ProjectIterator::prev()
-    {
-        mInputIterator->prev();
-    }
-
     void ProjectIterator::next()
     {
         mInputIterator->next();

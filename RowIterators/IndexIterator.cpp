@@ -24,12 +24,6 @@ namespace RowIterators {
         return mIndex.tree().data(mIndexPointer);
     }
 
-    void IndexIterator::prev()
-    {
-        mIndexPointer = mIndex.tree().prev(mIndexPointer);
-        updateTablePointer();
-    }
-
     void IndexIterator::next()
     {
         mIndexPointer = mIndex.tree().next(mIndexPointer);

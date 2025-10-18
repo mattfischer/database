@@ -21,11 +21,6 @@ namespace RowIterators {
         return mTable.tree().data(mPointer);
     }
 
-    void TableIterator::prev()
-    {
-        mPointer = mTable.tree().prev(mPointer);
-    }
-
     void TableIterator::next()
     {
         mPointer = mTable.tree().next(mPointer);

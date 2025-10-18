@@ -12,8 +12,6 @@ public:
 
     virtual void start() = 0;
     virtual bool valid() = 0;
-
-    virtual void prev() = 0;
     virtual void next() = 0;
 
     virtual Value getField(unsigned int index) = 0;

@@ -28,17 +28,6 @@ namespace RowIterators {
         return mInputIterator->valid();
     }
 
-    void SelectIterator::prev()
-    {
-        mInputIterator->prev();
-        while(mInputIterator->valid()) {
-            if(mPredicate->evaluate(*mInputIterator)) {
-                break;
-            }
-            mInputIterator->next();
-        }
-    }
-
     void SelectIterator::next()
     {
         mInputIterator->next();
