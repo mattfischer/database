@@ -3,6 +3,7 @@ project('database', 'cpp')
 sources = [
     'BTree.cpp',
     'BTreePage.cpp',
+    'Expression.cpp',
     'Index.cpp',
     'Main.cpp',
     'Page.cpp',
@@ -13,8 +14,6 @@ sources = [
     'RowIterators/ProjectIterator.cpp',
     'RowIterators/SelectIterator.cpp',
     'RowIterators/TableIterator.cpp',
-    'RowPredicates/ComparePredicate.cpp',
-    'RowPredicates/LogicalPredicate.cpp',
     'Table.cpp',
     'Value.cpp'
 ]

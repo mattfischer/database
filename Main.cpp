@@ -9,9 +9,6 @@
 #include "RowIterators/SelectIterator.hpp"
 #include "RowIterators/TableIterator.hpp"
 
-#include "RowPredicates/ComparePredicate.hpp"
-#include "RowPredicates/LogicalPredicate.hpp"
-
 #include <iostream>
 #include <sstream>
 
@@ -71,6 +68,18 @@ int main(int argc, char *argv[])
     std::cout << "-----------" << std::endl;
     std::cout << std::endl;
 
+    std::unique_ptr<RowIterator> tableIterator2 = std::make_unique<RowIterators::TableIterator>(table);
+    std::unique_ptr<Expression> expression = std::make_unique<CompareExpression>(CompareExpression::CompareType::LessThan,
+        std::make_unique<FieldExpression>(1),
+        std::make_unique<ConstantExpression>(Value(500))
+    );
+    RowIterators::SelectIterator selectIterator(std::move(tableIterator2), std::move(expression));
+    selectIterator.start();
+    printIterator(selectIterator);
+    std::cout << std::endl;
+    std::cout << "-----------" << std::endl;
+    std::cout << std::endl;
+    
     RowIterators::IndexIterator indexIterator(*table.indices()[0]);
     indexIterator.start();
     printIterator(indexIterator);

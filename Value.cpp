@@ -20,6 +20,12 @@ Value::Value(const std::string &value)
     mValue = value;
 }
 
+Value::Value(bool value)
+{
+    mType = Type::Boolean;
+    mValue = value;
+}
+
 Value::Type Value::type()
 {
     return mType;
@@ -43,6 +49,12 @@ void Value::setValue(const std::string &value)
     mValue = value;
 }
 
+void Value::setValue(bool value)
+{
+    mType = Type::Boolean;
+    mValue = value;
+}
+
 int Value::intValue()
 {
     return std::get<int>(mValue);
@@ -56,6 +68,11 @@ float Value::floatValue()
 const std::string &Value::stringValue()
 {
     return std::get<std::string>(mValue);
+}
+
+bool Value::booleanValue()
+{
+    return std::get<bool>(mValue);
 }
 
 void Value::print()
@@ -72,6 +89,10 @@ void Value::print()
         case Value::Type::String:
             std::cout << "\"" << stringValue() << "\"";  
             break;
+
+        case Value::Type::Boolean:
+            std::cout << (booleanValue() ? "true" : "false");
+            break;
     }
 }
 
@@ -84,6 +105,8 @@ bool Value::operator<(Value &other)
             return floatValue() < other.floatValue();
         case Type::String:
             return stringValue() < other.stringValue();
+        default:
+            return false;
     }
 }
 
@@ -101,6 +124,8 @@ bool Value::operator==(Value &other)
             return floatValue() == other.floatValue();
         case Type::String:
             return stringValue() == other.stringValue();
+        case Type::Boolean:
+            return booleanValue() == other.booleanValue();
     }
 }
 
@@ -123,5 +148,7 @@ bool Value::operator>(Value &other)
             return floatValue() > other.floatValue();
         case Type::String:
             return stringValue() > other.stringValue();
+        default:
+            return false;
     }
 }

@@ -9,23 +9,27 @@ public:
     enum Type {
         Int,
         Float,
-        String
+        String,
+        Boolean
     };
 
     Value() = default;
     Value(int value);
     Value(float value);
     Value(const std::string &value);
+    Value(bool value);
 
     Type type();
 
     void setValue(int value);
     void setValue(float value);
     void setValue(const std::string &value);
+    void setValue(bool value);
 
     int intValue();
     float floatValue();
     const std::string &stringValue();
+    bool booleanValue();
 
     void print();
 
@@ -38,6 +42,6 @@ public:
 
 private:
     Type mType;
-    std::variant<int, float, std::string> mValue;
+    std::variant<int, float, std::string, bool> mValue;
 };
 #endif
