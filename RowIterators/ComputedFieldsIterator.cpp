@@ -3,11 +3,11 @@
 #include "Table.hpp"
 
 namespace RowIterators {
-    ComputedFieldsIterator::ComputedFieldsIterator(RowIterator &inputIterator, std::vector<ComputedField> computedFields)
-    : mInputIterator(inputIterator)
+    ComputedFieldsIterator::ComputedFieldsIterator(std::unique_ptr<RowIterator> inputIterator, std::vector<ComputedField> computedFields)
+    : mInputIterator(std::move(inputIterator))
     , mComputedFields(std::move(computedFields))
     {
-        for(auto &field : mInputIterator.schema().fields) {
+        for(auto &field : mInputIterator->schema().fields) {
             mSchema.fields.push_back(field);
         }
         
@@ -23,27 +23,27 @@ namespace RowIterators {
 
     void ComputedFieldsIterator::start()
     {
-        mInputIterator.start();
+        mInputIterator->start();
         updateComputedFields();
     }
 
     bool ComputedFieldsIterator::valid()
     {
-        return mInputIterator.valid();
+        return mInputIterator->valid();
     }
 
     void ComputedFieldsIterator::next()
     {
-        mInputIterator.next();
+        mInputIterator->next();
         updateComputedFields();
     }
 
     Value ComputedFieldsIterator::getField(unsigned int index)
     {
-        if(index < mInputIterator.schema().fields.size()) {
-            return mInputIterator.getField(index);
+        if(index < mInputIterator->schema().fields.size()) {
+            return mInputIterator->getField(index);
         } else {
-            return mComputedValues[index - mInputIterator.schema().fields.size()];
+            return mComputedValues[index - mInputIterator->schema().fields.size()];
         }
     }
 
@@ -61,11 +61,11 @@ namespace RowIterators {
 
     void ComputedFieldsIterator::updateComputedFields()
     {
-        if(!mInputIterator.valid()) {
+        if(!mInputIterator->valid()) {
             return;
         }
 
-        IteratorContext context(mInputIterator);
+        IteratorContext context(*mInputIterator);
         mComputedValues.clear();
         for(auto &computedField : mComputedFields) {
             Value computedValue = computedField.expression->evaluate(context);

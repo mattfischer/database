@@ -50,6 +50,30 @@ Value LogicalExpression::evaluate(Context &context)
     }
 }
 
+ArithmeticExpression::ArithmeticExpression(ArithmeticType arithmeticType, std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand)
+: mArithmeticType(arithmeticType)
+, mLeftOperand(std::move(leftOperand))
+, mRightOperand(std::move(rightOperand))
+{
+}
+
+Value ArithmeticExpression::evaluate(Context &context)
+{
+    Value leftValue = mLeftOperand->evaluate(context);
+    Value rightValue = mRightOperand->evaluate(context);
+
+    switch(mArithmeticType) {
+        case ArithmeticType::Add:
+            return leftValue + rightValue;
+        case ArithmeticType::Subtract:
+            return leftValue - rightValue;
+        case ArithmeticType::Multiply:
+            return leftValue * rightValue;
+        case ArithmeticType::Divide:
+            return leftValue / rightValue;
+    }
+}
+
 ConstantExpression::ConstantExpression(Value value)
 : mValue(value)
 {

@@ -152,3 +152,47 @@ bool Value::operator>(Value &other)
             return false;
     }
 }
+
+Value Value::operator+(Value &other)
+{
+    switch(type()) {
+        case Type::Int:
+            return Value(intValue() + other.intValue());
+        case Type::Float:
+            return Value(floatValue() + other.floatValue());
+    }
+    return Value();
+}
+
+Value Value::operator-(Value &other)
+{
+    switch(type()) {
+        case Type::Int:
+            return Value(intValue() - other.intValue());
+        case Type::Float:
+            return Value(floatValue() - other.floatValue());
+    }
+    return Value();
+}
+
+Value Value::operator*(Value &other)
+{
+    switch(type()) {
+        case Type::Int:
+            return Value(intValue() * other.intValue());
+        case Type::Float:
+            return Value(floatValue() * other.floatValue());
+    }
+    return Value();
+}
+
+Value Value::operator/(Value &other)
+{
+    switch(type()) {
+        case Type::Int:
+            return Value(intValue() / other.intValue());
+        case Type::Float:
+            return Value(floatValue() / other.floatValue());
+    }
+    return Value();
+}

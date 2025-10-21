@@ -13,7 +13,7 @@ namespace RowIterators {
             std::unique_ptr<Expression> expression;
         };
 
-        ComputedFieldsIterator(RowIterator &inputIterator, std::vector<ComputedField> computedFields);
+        ComputedFieldsIterator(std::unique_ptr<RowIterator> inputIterator, std::vector<ComputedField> computedFields);
 
         RecordSchema &schema() override;
 
@@ -27,7 +27,7 @@ namespace RowIterators {
         void updateComputedFields();
 
         RecordSchema mSchema;
-        RowIterator &mInputIterator;
+        std::unique_ptr<RowIterator> mInputIterator;
         std::vector<ComputedField> mComputedFields;
         std::vector<Value> mComputedValues;
     };

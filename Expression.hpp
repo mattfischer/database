@@ -54,6 +54,24 @@ private:
     std::unique_ptr<Expression> mRightOperand;
 };
 
+class ArithmeticExpression : public Expression {
+public:
+    enum ArithmeticType {
+        Add,
+        Subtract,
+        Multiply,
+        Divide
+    };
+
+    ArithmeticExpression(ArithmeticType arithmeticType, std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand);
+    Value evaluate(Context &context) override;
+
+private:
+    ArithmeticType mArithmeticType;
+    std::unique_ptr<Expression> mLeftOperand;
+    std::unique_ptr<Expression> mRightOperand;
+};
+
 class ConstantExpression : public Expression {
 public:
     ConstantExpression(Value value);

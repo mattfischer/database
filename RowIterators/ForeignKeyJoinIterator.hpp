@@ -7,7 +7,7 @@
 namespace RowIterators {
     class ForeignKeyJoinIterator : public RowIterator {
     public:
-        ForeignKeyJoinIterator(RowIterator &inputIterator, unsigned int foreignKeyIndex, Table &foreignTable);
+        ForeignKeyJoinIterator(std::unique_ptr<RowIterator> inputIterator, unsigned int foreignKeyIndex, Table &foreignTable);
 
         RecordSchema &schema() override;
 
@@ -21,7 +21,7 @@ namespace RowIterators {
         void updateTablePointer();
 
         RecordSchema mSchema;
-        RowIterator &mInputIterator;
+        std::unique_ptr<RowIterator> mInputIterator;
         unsigned int mForeignKeyIndex;
         Table &mForeignTable;
         BTree::Pointer mTablePointer;

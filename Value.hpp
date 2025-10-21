@@ -40,6 +40,11 @@ public:
     bool operator>=(Value &other);
     bool operator>(Value &other);
 
+    Value operator+(Value &other);
+    Value operator-(Value &other);
+    Value operator*(Value &other);
+    Value operator/(Value &other);
+
 private:
     Type mType;
     std::variant<int, float, std::string, bool> mValue;

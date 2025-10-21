@@ -33,6 +33,9 @@ unsigned int RecordWriter::dataSize()
             case Value::Type::String:
                 size += mValues[i].stringValue().size() + 1;
                 break;
+            case Value::Type::Boolean:
+                size += sizeof(int);
+                break;
         }
     }
 
@@ -59,6 +62,8 @@ void RecordWriter::write(void *data)
             case Value::Type::String:
                 dataOffset += mValues[i].stringValue().size() + 1;
                 break;
+            case Value::Type::Boolean:
+                dataOffset += sizeof(int);
         }
     }
 
@@ -76,6 +81,10 @@ void RecordWriter::write(void *data)
             case Value::Type::String:
                 strcpy((char*)current, mValues[i].stringValue().data());
                 current += mValues[i].stringValue().size() + 1;
+                break;
+            case Value::Type::Boolean:
+                *reinterpret_cast<int*>(current) = mValues[i].booleanValue() ? 1 : 0;
+                current += sizeof(int);
                 break;
         }
     }
@@ -103,6 +112,10 @@ Value RecordReader::readField(unsigned int index)
 
         case Value::Type::String:
             value.setValue(std::string(reinterpret_cast<const char*>(mData + offsets[index])));
+            break;
+
+        case Value::Type::Boolean:
+            value.setValue(*reinterpret_cast<const int*>(mData + offsets[index]) == 1);
             break;
     }
 

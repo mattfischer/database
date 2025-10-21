@@ -4,6 +4,7 @@
 #include "Record.hpp"
 #include "Table.hpp"
 
+#include "RowIterators/ComputedFieldsIterator.hpp"
 #include "RowIterators/IndexIterator.hpp"
 #include "RowIterators/ProjectIterator.hpp"
 #include "RowIterators/SelectIterator.hpp"
@@ -69,28 +70,15 @@ int main(int argc, char *argv[])
     std::cout << std::endl;
 
     std::unique_ptr<RowIterator> tableIterator2 = std::make_unique<RowIterators::TableIterator>(table);
-    std::unique_ptr<Expression> expression = std::make_unique<CompareExpression>(CompareExpression::CompareType::LessThan,
+    std::unique_ptr<Expression> expression = std::make_unique<ArithmeticExpression>(ArithmeticExpression::ArithmeticType::Add,
         std::make_unique<FieldExpression>(1),
-        std::make_unique<ConstantExpression>(Value(500))
+        std::make_unique<ConstantExpression>(Value(10))
     );
-    RowIterators::SelectIterator selectIterator(std::move(tableIterator2), std::move(expression));
-    selectIterator.start();
-    printIterator(selectIterator);
-    std::cout << std::endl;
-    std::cout << "-----------" << std::endl;
-    std::cout << std::endl;
-    
-    RowIterators::IndexIterator indexIterator(*table.indices()[0]);
-    indexIterator.start();
-    printIterator(indexIterator);
-
-    std::cout << std::endl;
-    std::cout << "-----------" << std::endl;
-    std::cout << std::endl;
-
-    RowIterators::IndexIterator indexIterator2(*table.indices()[1]);
-    indexIterator2.start();
-    printIterator(indexIterator2);
+    std::vector<RowIterators::ComputedFieldsIterator::ComputedField> computedFields;
+    computedFields.push_back({"value", Value::Type::Int, std::move(expression)});
+    RowIterators::ComputedFieldsIterator computedFieldsIterator(std::move(tableIterator2), std::move(computedFields));
+    computedFieldsIterator.start();
+    printIterator(computedFieldsIterator);
 
     return 0;
 }
