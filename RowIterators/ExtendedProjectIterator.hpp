@@ -1,19 +1,19 @@
-#ifndef ROWITERATORS_COMPUTEDFIELDSITERATOR_HPP
-#define ROWITERATORS_COMPUTEDFIELDSITERATOR_HPP
+#ifndef ROWITERATORS_EXTENDEDPROJECTITERATOR_HPP
+#define ROWITERATORS_EXTENDEDPROJECTITERATOR_HPP
 
 #include "RowIterator.hpp"
 #include "Expression.hpp"
 
 namespace RowIterators {
-    class ComputedFieldsIterator : public RowIterator {
+    class ExtendedProjectIterator : public RowIterator {
     public:
-        struct ComputedField {
+        struct FieldDefinition {
             std::string name;
             Value::Type type;
             std::unique_ptr<Expression> expression;
         };
 
-        ComputedFieldsIterator(std::unique_ptr<RowIterator> inputIterator, std::vector<ComputedField> computedFields);
+        ExtendedProjectIterator(std::unique_ptr<RowIterator> inputIterator, std::vector<FieldDefinition> fieldDefinitions);
 
         RecordSchema &schema() override;
 
@@ -24,12 +24,12 @@ namespace RowIterators {
         Value getField(unsigned int index) override;
 
     private:
-        void updateComputedFields();
+        void updateValues();
 
         RecordSchema mSchema;
         std::unique_ptr<RowIterator> mInputIterator;
-        std::vector<ComputedField> mComputedFields;
-        std::vector<Value> mComputedValues;
+        std::vector<FieldDefinition> mFields;
+        std::vector<Value> mValues;
     };
 }
 
