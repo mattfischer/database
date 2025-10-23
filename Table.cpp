@@ -76,7 +76,7 @@ Table::RowId Table::addRow(RecordWriter &writer)
 
 void Table::removeRow(RowId rowId)
 {
-    BTree::Pointer pointer = mTree.lookup(BTree::Key(&rowId, sizeof(rowId)));
+    BTree::Pointer pointer = mTree.lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
     mTree.remove(pointer);
 }
 

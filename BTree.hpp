@@ -13,6 +13,8 @@ public:
     typedef BTreePage::Key Key;
     typedef BTreePage::KeyDefinition KeyDefinition;
     typedef BTreePage::DataDefinition DataDefinition;
+    typedef BTreePage::SearchComparison SearchComparison;
+    typedef BTreePage::SearchPosition SearchPosition;
 
     struct Pointer {
         Page::Index pageIndex;
@@ -42,7 +44,7 @@ public:
 
     PageSet &pageSet();
 
-    Pointer lookup(Key key);
+    Pointer lookup(Key key, SearchComparison comparison, SearchPosition position);
     Pointer add(Key key, BTreePage::Size size);
     void remove(Pointer pointer);
 
@@ -63,7 +65,7 @@ private:
     std::unique_ptr<KeyDefinition> mKeyDefinition;
     std::unique_ptr<DataDefinition> mDataDefinition;
 
-    BTreePage findLeaf(Key);
+    BTreePage findLeaf(Key key, SearchComparison comparison, SearchPosition position);
     BTreePage getPage(Page::Index index);
     int keyCompare(Key a, Key b);
 };

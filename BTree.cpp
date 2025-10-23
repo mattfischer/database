@@ -21,16 +21,16 @@ PageSet &BTree::pageSet()
     return mPageSet;
 }
 
-BTree::Pointer BTree::lookup(Key key)
+BTree::Pointer BTree::lookup(Key key, SearchComparison comparison, SearchPosition position)
 {
-    BTreePage leafPage = findLeaf(key);
-    BTreePage::Index index = leafPage.leafLookup(key);
+    BTreePage leafPage = findLeaf(key, comparison, position);
+    BTreePage::Index index = leafPage.leafLookup(key, comparison, position);
     return {leafPage.pageIndex(), index};
 }
 
 BTree::Pointer BTree::add(Key key, BTreePage::Size dataSize)
 {
-    BTreePage leafPage = findLeaf(key);
+    BTreePage leafPage = findLeaf(key, SearchComparison::GreaterThan, SearchPosition::First);
     if(leafPage.leafCanAdd(key.size, dataSize)) {
         return {leafPage.pageIndex(), leafPage.leafAdd(key, dataSize)};
     }
@@ -201,7 +201,7 @@ void BTree::print()
 }
 
 
-BTreePage BTree::findLeaf(Key key)
+BTreePage BTree::findLeaf(Key key, SearchComparison comparison, SearchPosition position)
 {
     Page::Index index = mRootIndex;
     while(true) {
@@ -210,7 +210,7 @@ BTreePage BTree::findLeaf(Key key)
             break;
         }
         
-        index = page.indirectLookup(key);
+        index = page.indirectLookup(key, comparison, position);
     }
 
     return getPage(index);

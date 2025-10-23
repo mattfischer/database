@@ -78,7 +78,7 @@ void Index::add(RecordWriter &writer, RowId rowId)
 
 void Index::remove(RowId rowId)
 {
-    BTree::Pointer tablePointer = mTable.tree().lookup(BTree::Key(&rowId, sizeof(rowId)));
+    BTree::Pointer tablePointer = mTable.tree().lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
     void *data = mTable.tree().data(tablePointer);
     RecordReader reader(mTable.schema(), data);
 
@@ -88,7 +88,7 @@ void Index::remove(RowId rowId)
     }
     BTree::KeyValue keyValue(keyWriter.dataSize());
     keyWriter.write(keyValue.data.data());
-    BTree::Pointer indexPointer = mTree->lookup(keyValue);
+    BTree::Pointer indexPointer = mTree->lookup(keyValue, BTree::SearchComparison::Equal, BTree::SearchPosition::First);
     mTree->remove(indexPointer);
 }
 

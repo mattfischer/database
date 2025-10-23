@@ -44,7 +44,7 @@ namespace RowIterators {
         if(data) {
             Table::RowId rowId = *reinterpret_cast<Table::RowId*>(data);
         
-            mTablePointer = mIndex.table().tree().lookup(BTree::Key(&rowId, sizeof(rowId)));
+            mTablePointer = mIndex.table().tree().lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
         }
     }
 }

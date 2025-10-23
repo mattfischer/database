@@ -56,7 +56,7 @@ namespace RowIterators {
             Value foreignKey = mInputIterator->getField(mForeignKeyIndex);
             Table::RowId rowId = foreignKey.intValue();
 
-            mTablePointer = mForeignTable.tree().lookup(BTree::Key(&rowId, sizeof(rowId)));
+            mTablePointer = mForeignTable.tree().lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
         }
     }
 }

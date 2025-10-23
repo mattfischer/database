@@ -44,6 +44,19 @@ public:
         virtual void print(void *data) = 0;
     };
 
+    enum SearchComparison {
+        LessThan,
+        LessThanEqual,
+        Equal,
+        GreaterThanEqual,
+        GreaterThan
+    };
+
+    enum SearchPosition {
+        First,
+        Last
+    };
+
     BTreePage(Page &page, KeyDefinition &keyDefinition, DataDefinition &dataDefinition);
 
     void initialize(Type type);
@@ -70,7 +83,7 @@ public:
     void *cellData(Index index);
     Size cellDataSize(Index index);
 
-    Index insertCell(Key key, Size dataSize, Index index);
+    void insertCell(Key key, Size dataSize, Index index);
 
     void removeCell(Index index);
 
@@ -79,7 +92,7 @@ public:
     bool isDeficient();
     bool canSupplyItem(Index index);
 
-    Index leafLookup(Key key);
+    Index leafLookup(Key key, SearchComparison comparison, SearchPosition position);
     bool leafCanAdd(size_t keySize, size_t dataSize);
     Index leafAdd(Key key, size_t dataSize);
     void leafRemove(Index index);
@@ -87,7 +100,7 @@ public:
     bool indirectCanAdd(size_t keySize);
     void indirectAdd(Key key, BTreePage &childPage);
     Page::Index indirectPageIndex(Index index);
-    Page::Index indirectLookup(Key key);
+    Page::Index indirectLookup(Key key, SearchComparison comparison, SearchPosition position);
     void indirectRectifyDeficientChild(BTreePage &childPage);
     void indirectPushHead(Key oldHeadKey, BTreePage &childPage);
     void indirectPushTail(Key key, BTreePage &childPage);
@@ -123,7 +136,7 @@ private:
 
     void removeCells(Index begin, Index end);
 
-    Index search(Key key);
+    Index search(Key key, SearchComparison comparison, SearchPosition position);
 
     Size freeSpace();
     void defragPage();
