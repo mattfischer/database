@@ -25,7 +25,11 @@ BTree::Pointer BTree::lookup(Key key, SearchComparison comparison, SearchPositio
 {
     BTreePage leafPage = findLeaf(key, comparison, position);
     BTreePage::Index index = leafPage.leafLookup(key, comparison, position);
-    return {leafPage.pageIndex(), index};
+    if(index == BTreePage::kInvalidIndex) {
+        return {Page::kInvalidIndex, 0};
+    } else {
+        return {leafPage.pageIndex(), index};
+    }
 }
 
 BTree::Pointer BTree::add(Key key, BTreePage::Size dataSize)

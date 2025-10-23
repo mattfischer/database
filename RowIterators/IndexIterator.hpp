@@ -4,10 +4,18 @@
 #include "RowIterator.hpp"
 #include "Index.hpp"
 
+#include <optional>
+
 namespace RowIterators {
     class IndexIterator : public RowIterator {
     public:
-        IndexIterator(Index &index);
+        struct Limit {
+            BTree::SearchComparison comparison;
+            BTree::SearchPosition position;
+            BTree::KeyValue key;
+        };
+
+        IndexIterator(Index &index, std::optional<Limit> startLimit, std::optional<Limit> endLimit);
 
         RecordSchema &schema() override;
 
@@ -23,6 +31,11 @@ namespace RowIterators {
         Index &mIndex;
         BTree::Pointer mIndexPointer;
         BTree::Pointer mTablePointer;
+
+        BTree::Pointer mStartPointer;
+        BTree::Pointer mEndPointer;
+        std::optional<Limit> mStartLimit;
+        std::optional<Limit> mEndLimit;
     };
 }
 #endif

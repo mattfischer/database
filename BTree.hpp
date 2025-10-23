@@ -19,6 +19,9 @@ public:
     struct Pointer {
         Page::Index pageIndex;
         BTreePage::Index cellIndex;
+
+        bool operator==(Pointer &other) { return pageIndex == other.pageIndex && cellIndex == other.cellIndex; }
+        bool valid() { return pageIndex != Page::kInvalidIndex; }
     };
 
     struct KeyValue {

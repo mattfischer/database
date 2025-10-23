@@ -3,8 +3,10 @@
 #include "Table.hpp"
 
 namespace RowIterators {
-    IndexIterator::IndexIterator(Index &index)
+    IndexIterator::IndexIterator(Index &index, std::optional<Limit> startLimit, std::optional<Limit> endLimit)
     : mIndex(index)
+    , mStartLimit(std::move(startLimit))
+    , mEndLimit(std::move(endLimit))
     {
     }
 
@@ -15,19 +17,35 @@ namespace RowIterators {
 
     void IndexIterator::start()
     {
-        mIndexPointer = mIndex.tree().first();
+        if(mStartLimit) {
+            mStartPointer = mIndex.tree().lookup(mStartLimit->key, mStartLimit->comparison, mStartLimit->position);
+        } else {
+            mStartPointer = mIndex.tree().first();
+        }
+
+        if(mEndLimit) {
+            mEndPointer = mIndex.tree().lookup(mEndLimit->key, mEndLimit->comparison, mEndLimit->position);
+        } else {
+            mEndPointer = mIndex.tree().last();
+        }
+
+        mIndexPointer = mStartPointer;
         updateTablePointer();
     }
 
     bool IndexIterator::valid()
     {
-        return mIndex.tree().data(mIndexPointer);
+        return mIndexPointer.valid();
     }
 
     void IndexIterator::next()
     {
-        mIndexPointer = mIndex.tree().next(mIndexPointer);
-        updateTablePointer();
+        if(mIndexPointer == mEndPointer) {
+            mIndexPointer = {Page::kInvalidIndex, 0};
+        } else {
+            mIndexPointer = mIndex.tree().next(mIndexPointer);
+            updateTablePointer();
+        }
     }
 
     Value IndexIterator::getField(unsigned int index)
@@ -40,8 +58,8 @@ namespace RowIterators {
 
     void IndexIterator::updateTablePointer()
     {
-        void *data = mIndex.tree().data(mIndexPointer);
-        if(data) {
+        if(mIndexPointer.valid()) {
+            void *data = mIndex.tree().data(mIndexPointer);
             Table::RowId rowId = *reinterpret_cast<Table::RowId*>(data);
         
             mTablePointer = mIndex.table().tree().lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);

@@ -16,6 +16,7 @@ public:
 
     Table &table();
     BTree &tree();
+    RecordSchema &keySchema();
 
     void add(RecordWriter &writer, RowId rowId);
     void remove(RowId rowId);

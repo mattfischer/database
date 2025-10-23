@@ -63,6 +63,11 @@ BTree &Index::tree()
     return *mTree;
 }
 
+RecordSchema &Index::keySchema()
+{
+    return mKeySchema;
+}
+
 void Index::add(RecordWriter &writer, RowId rowId)
 {
     RecordWriter keyWriter(mKeySchema);

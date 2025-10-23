@@ -69,16 +69,24 @@ int main(int argc, char *argv[])
     std::cout << "-----------" << std::endl;
     std::cout << std::endl;
 
-    std::unique_ptr<RowIterator> tableIterator2 = std::make_unique<RowIterators::TableIterator>(table);
-    std::unique_ptr<Expression> expression = std::make_unique<ArithmeticExpression>(ArithmeticExpression::ArithmeticType::Add,
-        std::make_unique<FieldExpression>(1),
-        std::make_unique<ConstantExpression>(Value(10))
-    );
-    std::vector<RowIterators::ExtendedProjectIterator::FieldDefinition> fields;
-    fields.push_back({"value", Value::Type::Int, std::move(expression)});
-    RowIterators::ExtendedProjectIterator extendedProjectIterator(std::move(tableIterator2), std::move(fields));
-    extendedProjectIterator.start();
-    printIterator(extendedProjectIterator);
+    RecordWriter startWriter(table.indices()[1]->keySchema());
+    startWriter.setField(0, Value(500));
+    RowIterators::IndexIterator::Limit startLimit;
+    startLimit.comparison = BTree::SearchComparison::GreaterThanEqual;
+    startLimit.position = BTree::SearchPosition::First;
+    startLimit.key.data.resize(startWriter.dataSize());
+    startWriter.write(startLimit.key.data.data());
 
+    RecordWriter endWriter(table.indices()[1]->keySchema());
+    endWriter.setField(0, Value(800));
+    RowIterators::IndexIterator::Limit endLimit;
+    endLimit.comparison = BTree::SearchComparison::LessThanEqual;
+    endLimit.position = BTree::SearchPosition::Last;
+    endLimit.key.data.resize(endWriter.dataSize());
+    endWriter.write(endLimit.key.data.data());
+
+    RowIterators::IndexIterator indexIterator(*table.indices()[1], startLimit, endLimit);
+    indexIterator.start();
+    printIterator(indexIterator);
     return 0;
 }
