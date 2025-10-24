@@ -4,6 +4,7 @@
 #include "Record.hpp"
 #include "Table.hpp"
 
+#include "RowIterators/AggregateIterator.hpp"
 #include "RowIterators/ExtendedProjectIterator.hpp"
 #include "RowIterators/IndexIterator.hpp"
 #include "RowIterators/ProjectIterator.hpp"
@@ -35,6 +36,7 @@ int main(int argc, char *argv[])
     RecordSchema schema;
     schema.fields.push_back({Value::Type::String, "name"});
     schema.fields.push_back({Value::Type::Int, "value"});
+    schema.fields.push_back({Value::Type::Int, "value2"});
 
     Page &rootPage = pageSet.addPage();
     Table table(rootPage, std::move(schema));
@@ -49,12 +51,14 @@ int main(int argc, char *argv[])
 
     srand(12345);
     for(int i=0; i<64; i++) {
-        int key = rand() % 1000;
+        int key = rand() % 5;
+        int key2 = rand() % 1000;
         RecordWriter writer(table.schema());
         std::stringstream ss;
         ss << "Row " << i;
         writer.setField(0, Value(ss.str()));
         writer.setField(1, Value(key));
+        writer.setField(2, Value(key2));
         table.addRow(writer);
     }
 
@@ -66,9 +70,10 @@ int main(int argc, char *argv[])
     std::cout << std::endl;
 
     std::unique_ptr<RowIterator> tableIterator2 = std::make_unique<RowIterators::TableIterator>(table);
-    RowIterators::SortIterator sortIterator(std::move(tableIterator2), 1);
-    sortIterator.start();
-    printIterator(sortIterator);
+    std::unique_ptr<RowIterator> sortIterator = std::make_unique<RowIterators::SortIterator>(std::move(tableIterator2), 1);
+    RowIterators::AggregateIterator aggregateIterator(std::move(sortIterator), RowIterators::AggregateIterator::Operation::Min, 2, 1);
+    aggregateIterator.start();
+    printIterator(aggregateIterator);
 
     return 0;
 }
