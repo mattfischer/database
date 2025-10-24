@@ -282,6 +282,31 @@ void BTreePage::leafRemove(Index index)
     removeCell(index);
 }
 
+bool BTreePage::leafResize(Index index, size_t dataSize)
+{
+    if(cellDataSize(index) >= dataSize) {
+        return true;
+    }
+
+    Header &head = header();
+    head.freeSpace += cellSize(index);
+    void *src = cellData(index);
+    std::vector<uint8_t> data(cellDataSize(index));
+    std::memcpy(data.data(), src, cellDataSize(index));
+
+    uint16_t offset = allocateCell(cellKey(index), dataSize);
+    uint16_t *offsets = offsetsArray();
+    offsets[index] = offset;
+    
+    Size totalKeySize = cellTotalKeySize(index);
+
+    std::memcpy(mPage.data(offset + totalKeySize), data.data(), dataSize);
+
+    head.freeSpace -= cellSize(index);
+
+    return true;
+}
+
 bool BTreePage::indirectCanAdd(size_t keySize)
 {
     return canAllocateCell(keySize, sizeof(Page::Index));

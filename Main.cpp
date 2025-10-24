@@ -30,10 +30,14 @@ void printIterator(RowIterator &iterator)
     }
 }
 
-void removeIterator(RowIterator &iterator)
+void modifyIterator(RowIterator &iterator)
 {
     while(iterator.valid()) {
-        iterator.remove();
+        std::vector<RowIterator::ModifyEntry> entries;
+        entries.push_back({2, Value(1000)});
+        iterator.modify(std::move(entries));
+
+        iterator.next();
     }
 }
 
@@ -85,7 +89,7 @@ int main(int argc, char *argv[])
     );
     std::unique_ptr<RowIterator> selectIterator = std::make_unique<RowIterators::SelectIterator>(std::move(tableIterator2), std::move(expression));
     selectIterator->start();
-    removeIterator(*selectIterator);
+    modifyIterator(*selectIterator);
 
     RowIterators::TableIterator tableIterator3(table);
     tableIterator3.start();

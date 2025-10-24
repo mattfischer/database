@@ -53,6 +53,11 @@ namespace RowIterators {
         return false;
     }
 
+    bool IndexIterator::modify(std::vector<ModifyEntry> entries)
+    {
+        return false;
+    }
+
     Value IndexIterator::getField(unsigned int index)
     {
         void *data = mIndex.table().tree().data(mTablePointer);

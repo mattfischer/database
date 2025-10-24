@@ -62,6 +62,11 @@ namespace RowIterators {
         return false;
     }
 
+    bool SortIterator::modify(std::vector<ModifyEntry> entries)
+    {
+        return false;
+    }
+
     Value SortIterator::getField(unsigned int index)
     {
         RecordReader reader(mInputIterator->schema(), mData.data() + mOffsets[mRow]);

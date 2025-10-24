@@ -47,6 +47,11 @@ namespace RowIterators {
         return result;
     }
 
+    bool ExtendedProjectIterator::modify(std::vector<ModifyEntry> entries)
+    {
+        return false;
+    }
+
     Value ExtendedProjectIterator::getField(unsigned int index)
     {
         if(index < mInputIterator->schema().fields.size()) {

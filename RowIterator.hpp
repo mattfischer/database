@@ -15,6 +15,12 @@ public:
     virtual void next() = 0;
     virtual bool remove() = 0;
 
+    struct ModifyEntry {
+        unsigned int field;
+        Value value;
+    };
+    virtual bool modify(std::vector<ModifyEntry> entries) = 0;
+
     virtual Value getField(unsigned int index) = 0;
 };
 

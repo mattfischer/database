@@ -35,6 +35,11 @@ namespace RowIterators {
         return mInputIterator->remove();
     }
 
+    bool ProjectIterator::modify(std::vector<ModifyEntry> entries)
+    {
+        return false;
+    }
+
     Value ProjectIterator::getField(unsigned int index)
     {
         return mInputIterator->getField(mFields[index].index);

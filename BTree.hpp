@@ -42,6 +42,7 @@ public:
 
     Pointer lookup(Key key, SearchComparison comparison, SearchPosition position);
     Pointer add(Key key, BTreePage::Size size);
+    bool resize(Pointer pointer, BTreePage::Size size);
     Pointer remove(Pointer pointer);
 
     void *key(Pointer pointer);

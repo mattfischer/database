@@ -15,6 +15,7 @@ namespace RowIterators {
         bool valid() override;
         void next() override;
         bool remove() override;
+        bool modify(std::vector<ModifyEntry> entries) override;
 
         Value getField(unsigned int index) override;
 

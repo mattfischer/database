@@ -104,6 +104,7 @@ public:
     bool leafCanAdd(size_t keySize, size_t dataSize);
     Index leafAdd(Key key, size_t dataSize);
     void leafRemove(Index index);
+    bool leafResize(Index index, size_t dataSize);
 
     bool indirectCanAdd(size_t keySize);
     void indirectAdd(Key key, BTreePage &childPage);

@@ -23,7 +23,10 @@ public:
     RecordSchema &schema();
 
     RowId addRow(RecordWriter &writer);
+    void modifyRow(RowId rowId, RecordWriter &writer);    
     void removeRow(RowId rowId);
+
+    RowId getRowId(BTree::Pointer pointer);
 
     void addIndex(std::vector<unsigned int> keys);
 

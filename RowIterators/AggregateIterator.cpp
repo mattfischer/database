@@ -63,6 +63,11 @@ namespace RowIterators {
         return false;
     }
 
+    bool AggregateIterator::modify(std::vector<ModifyEntry> entries)
+    {
+        return false;
+    }
+
     Value AggregateIterator::getField(unsigned int index)
     {
         Value value;

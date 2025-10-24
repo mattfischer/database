@@ -94,6 +94,12 @@ BTree::Pointer BTree::add(Key key, BTreePage::Size dataSize)
     return ret;
 }
 
+bool BTree::resize(Pointer pointer, BTreePage::Size dataSize)
+{
+    BTreePage leafPage = getPage(pointer.pageIndex);
+    return leafPage.leafResize(pointer.cellIndex, dataSize);
+}
+
 BTree::Pointer BTree::remove(Pointer pointer)
 {
     Pointer result = pointer;

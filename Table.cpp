@@ -74,10 +74,23 @@ Table::RowId Table::addRow(RecordWriter &writer)
     return rowId;
 }
 
+void Table::modifyRow(RowId rowId, RecordWriter &writer)
+{
+    BTree::Pointer pointer = mTree.lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
+    mTree.resize(pointer, writer.dataSize());
+    void *data = mTree.data(pointer);
+    writer.write(data);
+}
+
 void Table::removeRow(RowId rowId)
 {
     BTree::Pointer pointer = mTree.lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
     mTree.remove(pointer);
+}
+
+Table::RowId Table::getRowId(BTree::Pointer pointer)
+{
+    return *reinterpret_cast<RowId*>(mTree.key(pointer));
 }
 
 void Table::addIndex(std::vector<unsigned int> keys)
