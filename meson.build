@@ -14,6 +14,7 @@ sources = [
     'RowIterators/IndexIterator.cpp',
     'RowIterators/ProjectIterator.cpp',
     'RowIterators/SelectIterator.cpp',
+    'RowIterators/SortIterator.cpp',
     'RowIterators/TableIterator.cpp',
     'Table.cpp',
     'Value.cpp'

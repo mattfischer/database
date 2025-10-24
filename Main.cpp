@@ -8,6 +8,7 @@
 #include "RowIterators/IndexIterator.hpp"
 #include "RowIterators/ProjectIterator.hpp"
 #include "RowIterators/SelectIterator.hpp"
+#include "RowIterators/SortIterator.hpp"
 #include "RowIterators/TableIterator.hpp"
 
 #include <iostream>
@@ -56,11 +57,6 @@ int main(int argc, char *argv[])
         writer.setField(1, Value(key));
         table.addRow(writer);
     }
-    table.print();
-    table.indices()[0]->print();
-    std::cout << std::endl;
-    table.indices()[1]->print();
-    std::cout << std::endl;
 
     RowIterators::TableIterator tableIterator(table);
     tableIterator.start();
@@ -69,24 +65,10 @@ int main(int argc, char *argv[])
     std::cout << "-----------" << std::endl;
     std::cout << std::endl;
 
-    RecordWriter startWriter(table.indices()[1]->keySchema());
-    startWriter.setField(0, Value(500));
-    RowIterators::IndexIterator::Limit startLimit;
-    startLimit.comparison = BTree::SearchComparison::GreaterThanEqual;
-    startLimit.position = BTree::SearchPosition::First;
-    startLimit.key.data.resize(startWriter.dataSize());
-    startWriter.write(startLimit.key.data.data());
+    std::unique_ptr<RowIterator> tableIterator2 = std::make_unique<RowIterators::TableIterator>(table);
+    RowIterators::SortIterator sortIterator(std::move(tableIterator2), 1);
+    sortIterator.start();
+    printIterator(sortIterator);
 
-    RecordWriter endWriter(table.indices()[1]->keySchema());
-    endWriter.setField(0, Value(800));
-    RowIterators::IndexIterator::Limit endLimit;
-    endLimit.comparison = BTree::SearchComparison::LessThanEqual;
-    endLimit.position = BTree::SearchPosition::Last;
-    endLimit.key.data.resize(endWriter.dataSize());
-    endWriter.write(endLimit.key.data.data());
-
-    RowIterators::IndexIterator indexIterator(*table.indices()[1], startLimit, endLimit);
-    indexIterator.start();
-    printIterator(indexIterator);
     return 0;
 }
