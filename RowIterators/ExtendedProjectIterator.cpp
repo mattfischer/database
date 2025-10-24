@@ -38,6 +38,15 @@ namespace RowIterators {
         updateValues();
     }
 
+    bool ExtendedProjectIterator::remove()
+    {
+        bool result = mInputIterator->remove();
+        if(result) {
+            updateValues();
+        }
+        return result;
+    }
+
     Value ExtendedProjectIterator::getField(unsigned int index)
     {
         if(index < mInputIterator->schema().fields.size()) {

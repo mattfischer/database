@@ -58,6 +58,11 @@ namespace RowIterators {
         }
     }
 
+    bool AggregateIterator::remove()
+    {
+        return false;
+    }
+
     Value AggregateIterator::getField(unsigned int index)
     {
         Value value;

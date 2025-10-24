@@ -41,6 +41,15 @@ namespace RowIterators {
         updateIterator();
     }
 
+    bool SelectIterator::remove()
+    {
+        bool result = mInputIterator->remove();
+        if(result) {
+            updateIterator();
+        }
+        return result;
+    }
+
     Value SelectIterator::getField(unsigned int index)
     {
         return mInputIterator->getField(index);

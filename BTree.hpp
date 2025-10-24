@@ -15,14 +15,7 @@ public:
     typedef BTreePage::DataDefinition DataDefinition;
     typedef BTreePage::SearchComparison SearchComparison;
     typedef BTreePage::SearchPosition SearchPosition;
-
-    struct Pointer {
-        Page::Index pageIndex;
-        BTreePage::Index cellIndex;
-
-        bool operator==(Pointer &other) { return pageIndex == other.pageIndex && cellIndex == other.cellIndex; }
-        bool valid() { return pageIndex != Page::kInvalidIndex; }
-    };
+    typedef BTreePage::Pointer Pointer;
 
     struct KeyValue {
         KeyValue() = default;
@@ -49,7 +42,7 @@ public:
 
     Pointer lookup(Key key, SearchComparison comparison, SearchPosition position);
     Pointer add(Key key, BTreePage::Size size);
-    void remove(Pointer pointer);
+    Pointer remove(Pointer pointer);
 
     void *key(Pointer pointer);
     void *data(Pointer pointer);

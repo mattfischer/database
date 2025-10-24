@@ -94,11 +94,14 @@ BTree::Pointer BTree::add(Key key, BTreePage::Size dataSize)
     return ret;
 }
 
-void BTree::remove(Pointer pointer)
+BTree::Pointer BTree::remove(Pointer pointer)
 {
+    Pointer result = pointer;
     BTreePage leafPage = getPage(pointer.pageIndex);
     leafPage.leafRemove(pointer.cellIndex);
-
+    if(result.cellIndex == leafPage.numCells()) {
+        result = next(pointer);
+    }
     Page::Index index = leafPage.page().index();
 
     while(true) {
@@ -116,10 +119,12 @@ void BTree::remove(Pointer pointer)
             break;
         }
         BTreePage parentPage = getPage(page.parent());
-        parentPage.indirectRectifyDeficientChild(page);
+        parentPage.indirectRectifyDeficientChild(page, result);
 
         index = parentPage.page().index();
     }
+
+    return result;
 }
 
 void *BTree::key(Pointer pointer)

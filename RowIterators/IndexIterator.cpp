@@ -48,6 +48,11 @@ namespace RowIterators {
         }
     }
 
+    bool IndexIterator::remove()
+    {
+        return false;
+    }
+
     Value IndexIterator::getField(unsigned int index)
     {
         void *data = mIndex.table().tree().data(mTablePointer);

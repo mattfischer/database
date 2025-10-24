@@ -30,6 +30,11 @@ namespace RowIterators {
         mInputIterator->next();
     }
 
+    bool ProjectIterator::remove()
+    {
+        return mInputIterator->remove();
+    }
+
     Value ProjectIterator::getField(unsigned int index)
     {
         return mInputIterator->getField(mFields[index].index);

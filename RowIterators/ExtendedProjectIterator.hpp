@@ -20,6 +20,7 @@ namespace RowIterators {
         void start() override;
         bool valid() override;
         void next() override;
+        bool remove() override;
 
         Value getField(unsigned int index) override;
 

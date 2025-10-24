@@ -39,6 +39,11 @@ namespace RowIterators {
         updateTablePointer();
     }
 
+    bool ForeignKeyJoinIterator::remove()
+    {
+        return false;
+    }
+
     Value ForeignKeyJoinIterator::getField(unsigned int index)
     {
         if(index < mInputIterator->schema().fields.size()) {

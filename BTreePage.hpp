@@ -57,6 +57,14 @@ public:
         Last
     };
 
+    struct Pointer {
+        Page::Index pageIndex;
+        BTreePage::Index cellIndex;
+
+        bool operator==(Pointer &other) { return pageIndex == other.pageIndex && cellIndex == other.cellIndex; }
+        bool valid() { return pageIndex != Page::kInvalidIndex; }
+    };
+
     BTreePage(Page &page, KeyDefinition &keyDefinition, DataDefinition &dataDefinition);
 
     void initialize(Type type);
@@ -101,7 +109,7 @@ public:
     void indirectAdd(Key key, BTreePage &childPage);
     Page::Index indirectPageIndex(Index index);
     Page::Index indirectLookup(Key key, SearchComparison comparison, SearchPosition position);
-    void indirectRectifyDeficientChild(BTreePage &childPage);
+    void indirectRectifyDeficientChild(BTreePage &childPage, Pointer &trackPointer);
     void indirectPushHead(Key oldHeadKey, BTreePage &childPage);
     void indirectPushTail(Key key, BTreePage &childPage);
     void indirectPopHead();
@@ -146,9 +154,9 @@ private:
 
     PageSet &pageSet();
 
-    void indirectRotateRight(BTreePage &leftChild, BTreePage &rightChild, Index index);
-    void indirectRotateLeft(BTreePage &leftChild, BTreePage &rightChild, Index index);
-    void indirectMergeChildren(BTreePage &leftChild, BTreePage &rightChild, Index index);
+    void indirectRotateRight(BTreePage &leftChild, BTreePage &rightChild, Index index, Pointer &trackPointer);
+    void indirectRotateLeft(BTreePage &leftChild, BTreePage &rightChild, Index index, Pointer &trackPointer);
+    void indirectMergeChildren(BTreePage &leftChild, BTreePage &rightChild, Index index, Pointer &trackPointer);
 
     Page &mPage;
     KeyDefinition &mKeyDefinition;

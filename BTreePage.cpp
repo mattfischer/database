@@ -357,29 +357,36 @@ Page::Index BTreePage::indirectPageIndex(Index index)
     return *indexData;
 }
 
-void BTreePage::indirectRectifyDeficientChild(BTreePage &childPage)
+void BTreePage::indirectRectifyDeficientChild(BTreePage &childPage, Pointer &trackPointer)
 {
     Index childIndex = search(childPage.cellKey(1), SearchComparison::LessThan, SearchPosition::Last);
 
     if(childIndex < numCells() - 1) {
         BTreePage rightNeighbor = getPage(indirectPageIndex(childIndex + 1));
         if(rightNeighbor.canSupplyItem(0)) {
-            indirectRotateLeft(childPage, rightNeighbor, childIndex);
+            indirectRotateLeft(childPage, rightNeighbor, childIndex, trackPointer);
         } else {
-            indirectMergeChildren(childPage, rightNeighbor, childIndex + 1);
+            indirectMergeChildren(childPage, rightNeighbor, childIndex + 1, trackPointer);
         }
     } else {
         BTreePage leftNeighbor = getPage(indirectPageIndex(childIndex - 1));
         if(leftNeighbor.canSupplyItem(leftNeighbor.numCells() - 1)) {
-            indirectRotateRight(leftNeighbor, childPage, childIndex);
+            indirectRotateRight(leftNeighbor, childPage, childIndex, trackPointer);
         } else {
-            indirectMergeChildren(leftNeighbor, childPage, childIndex);
+            indirectMergeChildren(leftNeighbor, childPage, childIndex, trackPointer);
         }
     }
 }
 
-void BTreePage::indirectRotateRight(BTreePage &leftChild, BTreePage &rightChild, Index index)
+void BTreePage::indirectRotateRight(BTreePage &leftChild, BTreePage &rightChild, Index index, Pointer &trackPointer)
 {
+    if(trackPointer.pageIndex == leftChild.pageIndex() && trackPointer.cellIndex == leftChild.numCells() - 1) {
+        trackPointer.pageIndex = rightChild.pageIndex();
+        trackPointer.pageIndex = 0;
+    } else if(trackPointer.pageIndex == rightChild.pageIndex()) {
+        trackPointer.cellIndex++;
+    }
+
     if(rightChild.type() == BTreePage::Type::Indirect) {
         BTreePage movedChild = getPage(leftChild.indirectPageIndex(leftChild.numCells() - 1));
         rightChild.indirectPushHead(cellKey(index), movedChild);
@@ -394,8 +401,17 @@ void BTreePage::indirectRotateRight(BTreePage &leftChild, BTreePage &rightChild,
     }
 }
 
-void BTreePage::indirectRotateLeft(BTreePage &leftChild, BTreePage &rightChild, Index index)
+void BTreePage::indirectRotateLeft(BTreePage &leftChild, BTreePage &rightChild, Index index, Pointer &trackPointer)
 {
+    if(trackPointer.pageIndex == rightChild.pageIndex()) {
+        if(trackPointer.cellIndex == 0) {
+            trackPointer.pageIndex = leftChild.pageIndex();
+            trackPointer.cellIndex = leftChild.numCells();
+        } else {
+            trackPointer.cellIndex--;
+        }
+    }
+
     if(rightChild.type() == BTreePage::Type::Indirect) {
         BTreePage movedChild = getPage(rightChild.indirectPageIndex(0));
         leftChild.indirectPushTail(cellKey(index + 1), movedChild);
@@ -410,8 +426,13 @@ void BTreePage::indirectRotateLeft(BTreePage &leftChild, BTreePage &rightChild, 
     }
 }
 
-void BTreePage::indirectMergeChildren(BTreePage &leftChild, BTreePage &rightChild, Index index)
+void BTreePage::indirectMergeChildren(BTreePage &leftChild, BTreePage &rightChild, Index index, Pointer &trackPointer)
 {
+    if(trackPointer.pageIndex == rightChild.pageIndex()) {
+        trackPointer.pageIndex = leftChild.pageIndex();
+        trackPointer.cellIndex += leftChild.numCells();
+    }
+
     for(Index i=0; i<rightChild.numCells(); i++) {
         if(leftChild.type() == BTreePage::Type::Indirect) {
             BTreePage movedChild = getPage(rightChild.indirectPageIndex(i));
@@ -431,7 +452,6 @@ void BTreePage::indirectMergeChildren(BTreePage &leftChild, BTreePage &rightChil
         getPage(rightChild.nextSibling()).setPrevSibling(leftChild.pageIndex());
     }
     leftChild.setNextSibling(rightChild.nextSibling());
-    BTreePage next = getPage(rightChild.nextSibling());
     pageSet().deletePage(rightChild.page());
 }
 

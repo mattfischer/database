@@ -30,6 +30,13 @@ void printIterator(RowIterator &iterator)
     }
 }
 
+void removeIterator(RowIterator &iterator)
+{
+    while(iterator.valid()) {
+        iterator.remove();
+    }
+}
+
 int main(int argc, char *argv[])
 {
     PageSet pageSet;
@@ -62,6 +69,8 @@ int main(int argc, char *argv[])
         table.addRow(writer);
     }
 
+    table.print();
+
     RowIterators::TableIterator tableIterator(table);
     tableIterator.start();
     printIterator(tableIterator);
@@ -70,10 +79,20 @@ int main(int argc, char *argv[])
     std::cout << std::endl;
 
     std::unique_ptr<RowIterator> tableIterator2 = std::make_unique<RowIterators::TableIterator>(table);
-    std::unique_ptr<RowIterator> sortIterator = std::make_unique<RowIterators::SortIterator>(std::move(tableIterator2), 1);
-    RowIterators::AggregateIterator aggregateIterator(std::move(sortIterator), RowIterators::AggregateIterator::Operation::Min, 2, 1);
-    aggregateIterator.start();
-    printIterator(aggregateIterator);
+    std::unique_ptr<Expression> expression = std::make_unique<CompareExpression>(CompareExpression::CompareType::LessThan,
+        std::make_unique<FieldExpression>(2),
+        std::make_unique<ConstantExpression>(Value(500))
+    );
+    std::unique_ptr<RowIterator> selectIterator = std::make_unique<RowIterators::SelectIterator>(std::move(tableIterator2), std::move(expression));
+    selectIterator->start();
+    removeIterator(*selectIterator);
+
+    RowIterators::TableIterator tableIterator3(table);
+    tableIterator3.start();
+    printIterator(tableIterator3);
+    std::cout << std::endl;
+    std::cout << "-----------" << std::endl;
+    std::cout << std::endl;
 
     return 0;
 }

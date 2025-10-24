@@ -26,6 +26,12 @@ namespace RowIterators {
         mPointer = mTable.tree().next(mPointer);
     }
 
+    bool TableIterator::remove()
+    {
+        mPointer = mTable.tree().remove(mPointer);
+        return true;
+    }
+
     Value TableIterator::getField(unsigned int index)
     {
         void *data = mTable.tree().data(mPointer);

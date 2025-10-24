@@ -1,6 +1,6 @@
 #include "PageSet.hpp"
 
-static const size_t kPageSize = 128;
+static const size_t kPageSize = 256;
 
 Page &PageSet::page(Page::Index index)
 { 

@@ -57,6 +57,11 @@ namespace RowIterators {
         mRow++;
     }
 
+    bool SortIterator::remove()
+    {
+        return false;
+    }
+
     Value SortIterator::getField(unsigned int index)
     {
         RecordReader reader(mInputIterator->schema(), mData.data() + mOffsets[mRow]);
