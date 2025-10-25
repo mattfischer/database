@@ -28,7 +28,7 @@ namespace RowIterators {
 
     bool TableIterator::remove()
     {
-        mPointer = mTable.tree().remove(mPointer);
+        mTable.removeRow(mPointer);
         return true;
     }
 

@@ -32,6 +32,7 @@ namespace RowIterators {
 
         Index &mIndex;
         BTree::Pointer mIndexPointer;
+        Index::RowId mRowId;
         BTree::Pointer mTablePointer;
 
         BTree::Pointer mStartPointer;

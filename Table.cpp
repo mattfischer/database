@@ -66,7 +66,7 @@ Table::RowId Table::addRow(RecordWriter &writer)
     writer.write(data);
 
     for(auto &index : mIndices) {
-        index->add(writer, rowId);
+        index->add(rowId, writer);
     }
 
     mNextRowId++;
@@ -76,16 +76,33 @@ Table::RowId Table::addRow(RecordWriter &writer)
 
 void Table::modifyRow(RowId rowId, RecordWriter &writer)
 {
+    for(auto &index : mIndices) {
+        index->modify(rowId, writer);
+    }
+
     BTree::Pointer pointer = mTree.lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
     mTree.resize(pointer, writer.dataSize());
     void *data = mTree.data(pointer);
     writer.write(data);
 }
 
-void Table::removeRow(RowId rowId)
+void Table::removeRow(RowId rowId, BTree::Pointer &trackPointer)
 {
+    for(auto &index : mIndices) {
+        index->remove(rowId, trackPointer);
+    }
+
     BTree::Pointer pointer = mTree.lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
-    mTree.remove(pointer);
+    if(trackPointer == pointer) {
+        trackPointer = mTree.remove(pointer);
+    } else {
+        mTree.remove(pointer);
+    }
+}
+
+void Table::removeRow(BTree::Pointer &pointer)
+{
+    pointer = mTree.remove(pointer);
 }
 
 Table::RowId Table::getRowId(BTree::Pointer pointer)

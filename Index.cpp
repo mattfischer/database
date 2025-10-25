@@ -68,7 +68,7 @@ RecordSchema &Index::keySchema()
     return mKeySchema;
 }
 
-void Index::add(RecordWriter &writer, RowId rowId)
+void Index::add(RowId rowId, RecordWriter &writer)
 {
     RecordWriter keyWriter(mKeySchema);
     for(unsigned int i=0; i<mKeys.size(); i++) {
@@ -81,7 +81,7 @@ void Index::add(RecordWriter &writer, RowId rowId)
     std::memcpy(data, &rowId, sizeof(rowId));
 }
 
-void Index::remove(RowId rowId)
+void Index::modify(RowId rowId, RecordWriter &writer)
 {
     BTree::Pointer tablePointer = mTable.tree().lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
     void *data = mTable.tree().data(tablePointer);
@@ -95,6 +95,36 @@ void Index::remove(RowId rowId)
     keyWriter.write(keyValue.data.data());
     BTree::Pointer indexPointer = mTree->lookup(keyValue, BTree::SearchComparison::Equal, BTree::SearchPosition::First);
     mTree->remove(indexPointer);
+
+    RecordWriter newKeyWriter(mKeySchema);
+    for(unsigned int i=0; i<mKeys.size(); i++) {
+        newKeyWriter.setField(i, writer.field(mKeys[i]));
+    }
+    BTree::KeyValue newKeyValue(newKeyWriter.dataSize());
+    newKeyWriter.write(newKeyValue.data.data());
+    BTree::Pointer newPointer = mTree->add(newKeyValue, sizeof(RowId));
+    void *newData = mTree->data(newPointer);
+    std::memcpy(newData, &rowId, sizeof(rowId));
+}
+
+void Index::remove(RowId rowId, BTree::Pointer &trackPointer)
+{
+    BTree::Pointer tablePointer = mTable.tree().lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
+    void *data = mTable.tree().data(tablePointer);
+    RecordReader reader(mTable.schema(), data);
+
+    RecordWriter keyWriter(mKeySchema);
+    for(unsigned int i=0; i<mKeys.size(); i++) {
+        keyWriter.setField(i, reader.readField(mKeys[i]));
+    }
+    BTree::KeyValue keyValue(keyWriter.dataSize());
+    keyWriter.write(keyValue.data.data());
+    BTree::Pointer indexPointer = mTree->lookup(keyValue, BTree::SearchComparison::Equal, BTree::SearchPosition::First);
+    if(indexPointer == trackPointer) {
+        trackPointer = mTree->remove(indexPointer);
+    } else {
+        mTree->remove(indexPointer);
+    }
 }
 
 void Index::print()

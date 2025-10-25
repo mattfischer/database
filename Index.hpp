@@ -18,8 +18,9 @@ public:
     BTree &tree();
     RecordSchema &keySchema();
 
-    void add(RecordWriter &writer, RowId rowId);
-    void remove(RowId rowId);
+    void add(RowId rowId, RecordWriter &writer);
+    void modify(RowId rowId, RecordWriter &writer);
+    void remove(RowId rowId, BTree::Pointer &trackPointer);
     void print();
 
 private:

@@ -50,7 +50,10 @@ namespace RowIterators {
 
     bool IndexIterator::remove()
     {
-        return false;
+        mIndex.table().removeRow(mRowId, mIndexPointer);
+        updateTablePointer();
+
+        return true;
     }
 
     bool IndexIterator::modify(std::vector<ModifyEntry> entries)
@@ -70,9 +73,9 @@ namespace RowIterators {
     {
         if(mIndexPointer.valid()) {
             void *data = mIndex.tree().data(mIndexPointer);
-            Table::RowId rowId = *reinterpret_cast<Table::RowId*>(data);
+            mRowId = *reinterpret_cast<Table::RowId*>(data);
         
-            mTablePointer = mIndex.table().tree().lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
+            mTablePointer = mIndex.table().tree().lookup(BTree::Key(&mRowId, sizeof(mRowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
         }
     }
 }

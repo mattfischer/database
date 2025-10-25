@@ -24,7 +24,8 @@ public:
 
     RowId addRow(RecordWriter &writer);
     void modifyRow(RowId rowId, RecordWriter &writer);    
-    void removeRow(RowId rowId);
+    void removeRow(RowId rowId, BTree::Pointer &trackPointer);
+    void removeRow(BTree::Pointer &pointer);
 
     RowId getRowId(BTree::Pointer pointer);
 
