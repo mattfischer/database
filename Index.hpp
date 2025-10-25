@@ -21,6 +21,8 @@ public:
     void add(RowId rowId, RecordWriter &writer);
     void modify(RowId rowId, RecordWriter &writer);
     void remove(RowId rowId, BTree::Pointer &trackPointer);
+    
+    void *data(BTree::Pointer pointer);
     void print();
 
 private:

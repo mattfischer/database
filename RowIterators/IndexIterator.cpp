@@ -63,7 +63,7 @@ namespace RowIterators {
 
     Value IndexIterator::getField(unsigned int index)
     {
-        void *data = mIndex.table().tree().data(mTablePointer);
+        void *data = mIndex.table().data(mTablePointer);
 
         RecordReader reader(mIndex.table().schema(), data);
         return reader.readField(index);
@@ -72,10 +72,10 @@ namespace RowIterators {
     void IndexIterator::updateTablePointer()
     {
         if(mIndexPointer.valid()) {
-            void *data = mIndex.tree().data(mIndexPointer);
+            void *data = mIndex.data(mIndexPointer);
             mRowId = *reinterpret_cast<Table::RowId*>(data);
         
-            mTablePointer = mIndex.table().tree().lookup(BTree::Key(&mRowId, sizeof(mRowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
+            mTablePointer = mIndex.table().lookup(mRowId);
         }
     }
 }

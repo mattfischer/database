@@ -18,7 +18,7 @@ namespace RowIterators {
 
     bool TableIterator::valid()
     {
-        return mTable.tree().data(mPointer);
+        return mPointer.valid();
     }
 
     void TableIterator::next()
@@ -43,15 +43,14 @@ namespace RowIterators {
             writer.setField(entry.field, entry.value);
         }
 
-        Table::RowId rowId = mTable.getRowId(mPointer);
-        mTable.modifyRow(rowId, writer);
+        mTable.modifyRow(mPointer, writer);
 
         return true;
     }
 
     Value TableIterator::getField(unsigned int index)
     {
-        void *data = mTable.tree().data(mPointer);
+        void *data = mTable.data(mPointer);
         RecordReader reader(mTable.schema(), data);
 
         return reader.readField(index);

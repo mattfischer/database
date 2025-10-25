@@ -54,7 +54,7 @@ namespace RowIterators {
         if(index < mInputIterator->schema().fields.size()) {
             return mInputIterator->getField(index);
         } else {
-            void *data = mForeignTable.tree().data(mTablePointer);
+            void *data = mForeignTable.data(mTablePointer);
             RecordReader reader(mForeignTable.schema(), data);
             return reader.readField(index - mInputIterator->schema().fields.size());
         }
@@ -66,7 +66,7 @@ namespace RowIterators {
             Value foreignKey = mInputIterator->getField(mForeignKeyIndex);
             Table::RowId rowId = foreignKey.intValue();
 
-            mTablePointer = mForeignTable.tree().lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
+            mTablePointer = mForeignTable.lookup(rowId);
         }
     }
 }

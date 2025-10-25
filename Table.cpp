@@ -86,6 +86,18 @@ void Table::modifyRow(RowId rowId, RecordWriter &writer)
     writer.write(data);
 }
 
+void Table::modifyRow(BTree::Pointer pointer, RecordWriter &writer)
+{
+    RowId rowId = getRowId(pointer);
+    for(auto &index : mIndices) {
+        index->modify(rowId, writer);
+    }
+
+    mTree.resize(pointer, writer.dataSize());
+    void *data = mTree.data(pointer);
+    writer.write(data);
+}
+
 void Table::removeRow(RowId rowId, BTree::Pointer &trackPointer)
 {
     for(auto &index : mIndices) {
@@ -108,6 +120,21 @@ void Table::removeRow(BTree::Pointer &pointer)
 Table::RowId Table::getRowId(BTree::Pointer pointer)
 {
     return *reinterpret_cast<RowId*>(mTree.key(pointer));
+}
+
+BTree::Pointer Table::lookup(RowId rowId)
+{
+    BTree::Pointer pointer = mTree.lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
+    return pointer;
+}
+
+void *Table::data(BTree::Pointer pointer)
+{
+    if(pointer.valid()) {
+        return mTree.data(pointer);
+    } else {
+        return nullptr;
+    }
 }
 
 void Table::addIndex(std::vector<unsigned int> keys)

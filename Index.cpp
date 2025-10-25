@@ -127,6 +127,11 @@ void Index::remove(RowId rowId, BTree::Pointer &trackPointer)
     }
 }
 
+void *Index::data(BTree::Pointer pointer)
+{
+    return mTree->data(pointer);
+}
+
 void Index::print()
 {
     mTree->print();
