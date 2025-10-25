@@ -70,40 +70,13 @@ namespace RowIterators {
 
     Value AggregateIterator::getField(unsigned int index)
     {
-        Value value;
-
-        switch(mOperation) {
-            case Min:
-            case Max:
-            case Sum:
-                value = mValue;
-                break;
-            case Average:
-            {
-                float sum = 0;
-                switch(mInputIterator->schema().fields[mField].type) {
-                    case Value::Type::Int:
-                        sum = (float)mValue.intValue();
-                        break;
-                    case Value::Type::Float:
-                        sum = mValue.floatValue();
-                        break;
-                }
-                value = Value(sum / mCount);
-                break;
-            }
-            case Count:
-                value = Value(mCount);
-                break;
-        }
-
         if(mGroupField == kFieldNone) {
-            return value;
+            return mValue;
         } else {
             if(index == 0) {
                 return mGroupValue;
             } else {
-                return value;
+                return mValue;
             }
         }
     }
@@ -115,8 +88,8 @@ namespace RowIterators {
             return;
         }
 
-        mCount = 0;
-        mValid = true;
+        int count = 0;
+        Value value;
         if(mInputIterator->valid() && mGroupField != kFieldNone) {
             mGroupValue = mInputIterator->getField(mGroupField);
         }
@@ -128,22 +101,49 @@ namespace RowIterators {
                 }
             }
 
-            Value value = mInputIterator->getField(mField);
+            Value newValue = mInputIterator->getField(mField);
             switch(mOperation) {
                 case Min:
-                    if(mCount == 0 || value < mValue) mValue = value;
+                    if(count == 0 || newValue < value) value = newValue;
                     break;
                 case Average:
                 case Sum:
-                    if(mCount == 0) mValue = value; else mValue = mValue + value;
+                    if(count == 0) value = newValue; else value = value + newValue;
                     break;
                 case Max:
-                    if(mCount == 0 || value > mValue) mValue = value;
+                    if(count == 0 || newValue > value) value = newValue;
                     break;
             }
 
-            mCount++;
+            count++;
             mInputIterator->next();
         }
+
+        switch(mOperation) {
+            case Min:
+            case Max:
+            case Sum:
+                mValue = value;
+                break;
+            case Average:
+            {
+                float sum = 0;
+                switch(mInputIterator->schema().fields[mField].type) {
+                    case Value::Type::Int:
+                        sum = (float)value.intValue();
+                        break;
+                    case Value::Type::Float:
+                        sum = value.floatValue();
+                        break;
+                }
+                mValue = Value(sum / count);
+                break;
+            }
+            case Count:
+                mValue = Value(count);
+                break;
+        }
+
+        mValid = true;
     }
 }

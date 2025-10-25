@@ -43,7 +43,6 @@ namespace RowIterators {
         Value mGroupValue;
         bool mValid;
         Value mValue;
-        int mCount;
     };
 }
 #endif
