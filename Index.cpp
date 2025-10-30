@@ -107,7 +107,7 @@ void Index::modify(RowId rowId, RecordWriter &writer)
     std::memcpy(newData, &rowId, sizeof(rowId));
 }
 
-void Index::remove(RowId rowId, BTree::Pointer &trackPointer)
+void Index::remove(RowId rowId, std::span<BTree::Pointer*> trackPointers)
 {
     BTree::Pointer tablePointer = mTable.tree().lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
     void *data = mTable.tree().data(tablePointer);
@@ -120,11 +120,7 @@ void Index::remove(RowId rowId, BTree::Pointer &trackPointer)
     BTree::KeyValue keyValue(keyWriter.dataSize());
     keyWriter.write(keyValue.data.data());
     BTree::Pointer indexPointer = mTree->lookup(keyValue, BTree::SearchComparison::Equal, BTree::SearchPosition::First);
-    if(indexPointer == trackPointer) {
-        trackPointer = mTree->remove(indexPointer);
-    } else {
-        mTree->remove(indexPointer);
-    }
+    mTree->remove(indexPointer, trackPointers);
 }
 
 void *Index::data(BTree::Pointer pointer)

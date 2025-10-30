@@ -21,4 +21,4 @@ sources = [
     'Value.cpp'
 ]
 
-executable('database', sources, cpp_args: ['/std:c++17'])
+executable('database', sources, cpp_args: ['/std:c++20'])

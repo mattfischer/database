@@ -8,6 +8,7 @@
 #include "Index.hpp"
 
 #include <memory>
+#include <span>
 
 class Table {
 public:
@@ -25,8 +26,8 @@ public:
     RowId addRow(RecordWriter &writer);
     void modifyRow(RowId rowId, RecordWriter &writer);
     void modifyRow(BTree::Pointer pointer, RecordWriter &writer);    
-    void removeRow(RowId rowId, BTree::Pointer &trackPointer);
-    void removeRow(BTree::Pointer &pointer);
+    void removeRow(RowId rowId, std::span<BTree::Pointer*> trackPointers);
+    void removeRow(BTree::Pointer pointer, std::span<BTree::Pointer*> trackPointers);
 
     RowId getRowId(BTree::Pointer pointer);
     BTree::Pointer lookup(RowId rowId);

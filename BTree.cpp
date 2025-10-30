@@ -100,14 +100,10 @@ bool BTree::resize(Pointer pointer, BTreePage::Size dataSize)
     return leafPage.leafResize(pointer.cellIndex, dataSize);
 }
 
-BTree::Pointer BTree::remove(Pointer pointer)
+void BTree::remove(Pointer pointer, std::span<Pointer*> trackPointers)
 {
-    Pointer result = pointer;
     BTreePage leafPage = getPage(pointer.pageIndex);
-    leafPage.leafRemove(pointer.cellIndex);
-    if(result.cellIndex == leafPage.numCells()) {
-        result = next(pointer);
-    }
+    leafPage.leafRemove(pointer.cellIndex, trackPointers);
     Page::Index index = leafPage.page().index();
 
     while(true) {
@@ -125,12 +121,10 @@ BTree::Pointer BTree::remove(Pointer pointer)
             break;
         }
         BTreePage parentPage = getPage(page.parent());
-        parentPage.indirectRectifyDeficientChild(page, result);
+        parentPage.indirectRectifyDeficientChild(page, trackPointers);
 
         index = parentPage.page().index();
     }
-
-    return result;
 }
 
 void *BTree::key(Pointer pointer)

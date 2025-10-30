@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <iostream>
+#include <span>
 
 class BTree {
 public:
@@ -43,7 +44,7 @@ public:
     Pointer lookup(Key key, SearchComparison comparison, SearchPosition position);
     Pointer add(Key key, BTreePage::Size size);
     bool resize(Pointer pointer, BTreePage::Size size);
-    Pointer remove(Pointer pointer);
+    void remove(Pointer pointer, std::span<Pointer*> trackPointers = std::span<Pointer*>());
 
     void *key(Pointer pointer);
     void *data(Pointer pointer);

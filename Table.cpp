@@ -98,23 +98,19 @@ void Table::modifyRow(BTree::Pointer pointer, RecordWriter &writer)
     writer.write(data);
 }
 
-void Table::removeRow(RowId rowId, BTree::Pointer &trackPointer)
+void Table::removeRow(RowId rowId, std::span<BTree::Pointer*> trackPointers)
 {
     for(auto &index : mIndices) {
-        index->remove(rowId, trackPointer);
+        index->remove(rowId, trackPointers);
     }
 
     BTree::Pointer pointer = mTree.lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
-    if(trackPointer == pointer) {
-        trackPointer = mTree.remove(pointer);
-    } else {
-        mTree.remove(pointer);
-    }
+    mTree.remove(pointer, trackPointers);
 }
 
-void Table::removeRow(BTree::Pointer &pointer)
+void Table::removeRow(BTree::Pointer pointer, std::span<BTree::Pointer*> trackPointers)
 {
-    pointer = mTree.remove(pointer);
+    mTree.remove(pointer, trackPointers);
 }
 
 Table::RowId Table::getRowId(BTree::Pointer pointer)

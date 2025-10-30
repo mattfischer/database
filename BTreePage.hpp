@@ -4,6 +4,7 @@
 #include "PageSet.hpp"
 
 #include <string>
+#include <span>
 
 class BTreePage {
 public:
@@ -103,14 +104,14 @@ public:
     Index leafLookup(Key key, SearchComparison comparison, SearchPosition position);
     bool leafCanAdd(size_t keySize, size_t dataSize);
     Index leafAdd(Key key, size_t dataSize);
-    void leafRemove(Index index);
+    void leafRemove(Index index, std::span<Pointer*> trackPointers);
     bool leafResize(Index index, size_t dataSize);
 
     bool indirectCanAdd(size_t keySize);
     void indirectAdd(Key key, BTreePage &childPage);
     Page::Index indirectPageIndex(Index index);
     Page::Index indirectLookup(Key key, SearchComparison comparison, SearchPosition position);
-    void indirectRectifyDeficientChild(BTreePage &childPage, Pointer &trackPointer);
+    void indirectRectifyDeficientChild(BTreePage &childPage, std::span<Pointer*> trackPointers);
     void indirectPushHead(Key oldHeadKey, BTreePage &childPage);
     void indirectPushTail(Key key, BTreePage &childPage);
     void indirectPopHead();
@@ -155,9 +156,9 @@ private:
 
     PageSet &pageSet();
 
-    void indirectRotateRight(BTreePage &leftChild, BTreePage &rightChild, Index index, Pointer &trackPointer);
-    void indirectRotateLeft(BTreePage &leftChild, BTreePage &rightChild, Index index, Pointer &trackPointer);
-    void indirectMergeChildren(BTreePage &leftChild, BTreePage &rightChild, Index index, Pointer &trackPointer);
+    void indirectRotateRight(BTreePage &leftChild, BTreePage &rightChild, Index index, std::span<Pointer*> trackPointers);
+    void indirectRotateLeft(BTreePage &leftChild, BTreePage &rightChild, Index index, std::span<Pointer*> trackPointers);
+    void indirectMergeChildren(BTreePage &leftChild, BTreePage &rightChild, Index index, std::span<Pointer*> trackPointers);
 
     Page &mPage;
     KeyDefinition &mKeyDefinition;

@@ -50,7 +50,8 @@ namespace RowIterators {
 
     bool IndexIterator::remove()
     {
-        mIndex.table().removeRow(mRowId, mIndexPointer);
+        BTree::Pointer* pointers[] = {&mIndexPointer, &mStartPointer, &mEndPointer};
+        mIndex.table().removeRow(mRowId, pointers);
         updateTablePointer();
 
         return true;
