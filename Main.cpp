@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "Database.hpp"
 #include "PageSet.hpp"
 #include "Record.hpp"
 #include "Table.hpp"
@@ -43,15 +44,15 @@ void modifyIterator(RowIterator &iterator)
 
 int main(int argc, char *argv[])
 {
-    PageSet pageSet;
+    Database database;
+
     RecordSchema schema;
     schema.fields.push_back({Value::Type::String, "name"});
     schema.fields.push_back({Value::Type::Int, "value"});
     schema.fields.push_back({Value::Type::Int, "value2"});
 
-    Page &rootPage = pageSet.addPage();
-    Table table(rootPage, std::move(schema));
-    table.initialize();
+    database.addTable(std::move(schema));
+    Table &table = database.table(0);
 
     std::vector<unsigned int> keys;
     keys.push_back(0);
