@@ -56,10 +56,10 @@ int main(int argc, char *argv[])
 
     std::vector<unsigned int> keys;
     keys.push_back(0);
-    table.addIndex(std::move(keys));
+    database.addIndex(table, std::move(keys));
 
     keys.push_back(1);
-    table.addIndex(std::move(keys));
+    database.addIndex(table, std::move(keys));
 
     srand(12345);
     for(int i=0; i<64; i++) {

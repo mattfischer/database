@@ -19,7 +19,7 @@ public:
     void initialize();
 
     BTree &tree();
-    std::vector<std::unique_ptr<Index>> &indices();
+    std::vector<Index*> &indices();
 
     RecordSchema &schema();
 
@@ -33,7 +33,7 @@ public:
     BTree::Pointer lookup(RowId rowId);
     void *data(BTree::Pointer pointer);
 
-    void addIndex(std::vector<unsigned int> keys);
+    void addIndex(Index &index);
 
     void print();
 
@@ -42,6 +42,6 @@ private:
     RecordSchema mSchema;
     BTree mTree;
     RowId mNextRowId;
-    std::vector<std::unique_ptr<Index>> mIndices;
+    std::vector<Index*> mIndices;
 };
 #endif

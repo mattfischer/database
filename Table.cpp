@@ -53,7 +53,7 @@ BTree &Table::tree()
     return mTree;
 }
 
-std::vector<std::unique_ptr<Index>> &Table::indices()
+std::vector<Index*> &Table::indices()
 {
     return mIndices;
 }
@@ -133,9 +133,9 @@ void *Table::data(BTree::Pointer pointer)
     }
 }
 
-void Table::addIndex(std::vector<unsigned int> keys)
+void Table::addIndex(Index &index)
 {
-    mIndices.push_back(std::make_unique<Index>(*this, std::move(keys)));
+    mIndices.push_back(&index);
 }
 
 void Table::print()
