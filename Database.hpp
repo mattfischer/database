@@ -5,23 +5,23 @@
 #include "Table.hpp"
 #include "Index.hpp"
 
-#include <vector>
+#include <map>
 #include <memory>
 
 class Database {
 public:
     PageSet &pageSet();
 
-    void addTable(RecordSchema schema);
+    void addTable(const std::string &name, RecordSchema schema);
+    Table &table(const std::string &name);
 
-    Table &table(unsigned int index);
-
-    void addIndex(Table &table, std::vector<unsigned int> keys);
+    void addIndex(const std::string &name, const std::string &tableName, std::vector<unsigned int> keys);
+    Index &index(const std::string &name);
 
 private:
     PageSet mPageSet;
-    std::vector<std::unique_ptr<Table>> mTables;
-    std::vector<std::unique_ptr<Index>> mIndices;
+    std::map<std::string, std::unique_ptr<Table>> mTables;
+    std::map<std::string, std::unique_ptr<Index>> mIndices;
 };
 
 #endif

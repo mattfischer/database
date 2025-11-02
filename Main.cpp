@@ -51,16 +51,16 @@ int main(int argc, char *argv[])
     schema.fields.push_back({Value::Type::Int, "value"});
     schema.fields.push_back({Value::Type::Int, "value2"});
 
-    database.addTable(std::move(schema));
-    Table &table = database.table(0);
+    database.addTable("Table", std::move(schema));
 
     std::vector<unsigned int> keys;
     keys.push_back(0);
-    database.addIndex(table, std::move(keys));
+    database.addIndex("Table.1", "Table", std::move(keys));
 
     keys.push_back(1);
-    database.addIndex(table, std::move(keys));
+    database.addIndex("Table.2", "Table", std::move(keys));
 
+    Table &table = database.table("Table");
     srand(12345);
     for(int i=0; i<64; i++) {
         int key = rand() % 5;
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 
     table.print();
 
-    RowIterators::TableIterator tableIterator(table);
+    RowIterators::TableIterator tableIterator(database.table("Table"));
     tableIterator.start();
     printIterator(tableIterator);
     std::cout << std::endl;
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
     selectIterator->start();
     modifyIterator(*selectIterator);
 
-    RowIterators::TableIterator tableIterator3(table);
+    RowIterators::TableIterator tableIterator3(database.table("Table"));
     tableIterator3.start();
     printIterator(tableIterator3);
     std::cout << std::endl;
