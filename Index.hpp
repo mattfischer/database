@@ -3,27 +3,34 @@
 
 #include "Record.hpp"
 #include "BTree.hpp"
+#include "Table.hpp"
 
 #include <vector>
 #include <memory>
 #include <span>
 
-class Table;
 class Index {
 public:
-    Index(Table &table, std::vector<unsigned int> keys);
+    Index(Page &rootPage, Table &table, std::vector<unsigned int> keys);
 
-    typedef uint32_t RowId;
+    typedef BTree::Pointer Pointer;
 
     Table &table();
-    BTree &tree();
     RecordSchema &keySchema();
 
-    void add(RowId rowId, RecordWriter &writer);
-    void modify(RowId rowId, RecordWriter &writer);
-    void remove(RowId rowId, std::span<BTree::Pointer*> trackPointers);
+    void add(Table::RowId rowId, RecordWriter &writer);
+    void modify(Table::RowId rowId, RecordWriter &writer);
+    void remove(Table::RowId rowId, std::span<Pointer*> trackPointers);
     
-    void *data(BTree::Pointer pointer);
+    Pointer first();
+    Pointer last();
+
+    bool moveNext(Pointer &pointer);
+    bool movePrev(Pointer &pointer);
+
+    Pointer lookup(BTree::Key key, BTree::SearchComparison comparison, BTree::SearchPosition position);
+    Table::RowId rowId(Pointer pointer);
+
     void print();
 
 private:

@@ -18,15 +18,15 @@ namespace RowIterators {
     void IndexIterator::start()
     {
         if(mStartLimit) {
-            mStartPointer = mIndex.tree().lookup(mStartLimit->key, mStartLimit->comparison, mStartLimit->position);
+            mStartPointer = mIndex.lookup(mStartLimit->key, mStartLimit->comparison, mStartLimit->position);
         } else {
-            mStartPointer = mIndex.tree().first();
+            mStartPointer = mIndex.first();
         }
 
         if(mEndLimit) {
-            mEndPointer = mIndex.tree().lookup(mEndLimit->key, mEndLimit->comparison, mEndLimit->position);
+            mEndPointer = mIndex.lookup(mEndLimit->key, mEndLimit->comparison, mEndLimit->position);
         } else {
-            mEndPointer = mIndex.tree().last();
+            mEndPointer = mIndex.last();
         }
 
         mIndexPointer = mStartPointer;
@@ -43,14 +43,14 @@ namespace RowIterators {
         if(mIndexPointer == mEndPointer) {
             mIndexPointer = {Page::kInvalidIndex, 0};
         } else {
-            mIndexPointer = mIndex.tree().next(mIndexPointer);
+            mIndex.moveNext(mIndexPointer);
             updateTablePointer();
         }
     }
 
     bool IndexIterator::remove()
     {
-        BTree::Pointer* pointers[] = {&mIndexPointer, &mStartPointer, &mEndPointer};
+        Index::Pointer* pointers[] = {&mIndexPointer, &mStartPointer, &mEndPointer};
         mIndex.table().removeRow(mRowId, pointers);
         updateTablePointer();
 
@@ -73,9 +73,7 @@ namespace RowIterators {
     void IndexIterator::updateTablePointer()
     {
         if(mIndexPointer.valid()) {
-            void *data = mIndex.data(mIndexPointer);
-            mRowId = *reinterpret_cast<Table::RowId*>(data);
-        
+            mRowId = mIndex.rowId(mIndexPointer);
             mTablePointer = mIndex.table().lookup(mRowId);
         }
     }

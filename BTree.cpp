@@ -179,26 +179,31 @@ BTree::Pointer BTree::last()
     return {index, (BTreePage::Index)(page.numCells() - 1)};
 }
 
-BTree::Pointer BTree::next(Pointer pointer)
+bool BTree::moveNext(Pointer &pointer)
 {
     BTreePage page = getPage(pointer.pageIndex);
     if(pointer.cellIndex < page.numCells() - 1) {
-        return {pointer.pageIndex, (BTreePage::Index)(pointer.cellIndex + 1)};
+        pointer = {pointer.pageIndex, (BTreePage::Index)(pointer.cellIndex + 1)};
+        return true;
     } else {
-        return {page.nextSibling(), 0};
+        pointer = {page.nextSibling(), 0};
+        return pointer.valid();
     }
 }
 
-BTree::Pointer BTree::prev(Pointer pointer)
+bool BTree::movePrev(Pointer &pointer)
 {
     BTreePage page = getPage(pointer.pageIndex);
     if(pointer.cellIndex > 0) {
-        return {pointer.pageIndex, (BTreePage::Index)(pointer.cellIndex - 1)};
+        pointer = {pointer.pageIndex, (BTreePage::Index)(pointer.cellIndex - 1)};
+        return true;
     } else {
         if(page.prevSibling() == Page::kInvalidIndex) {
-            return {Page::kInvalidIndex, 0};
+            pointer = {Page::kInvalidIndex, 0};
+            return false;
         } else {
-            return {page.prevSibling(), (BTreePage::Index)(getPage(page.prevSibling()).numCells() - 1)};
+            pointer = {page.prevSibling(), (BTreePage::Index)(getPage(page.prevSibling()).numCells() - 1)};
+            return true;
         }
     }
 }

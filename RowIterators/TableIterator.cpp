@@ -13,7 +13,7 @@ namespace RowIterators {
 
     void TableIterator::start()
     {
-        mPointer = mTable.tree().first();
+        mPointer = mTable.first();
     }
 
     bool TableIterator::valid()
@@ -23,12 +23,12 @@ namespace RowIterators {
 
     void TableIterator::next()
     {
-        mPointer = mTable.tree().next(mPointer);
+        mTable.moveNext(mPointer);
     }
 
     bool TableIterator::remove()
     {
-        BTree::Pointer *pointers[] = {&mPointer};
+        Table::Pointer *pointers[] = {&mPointer};
         mTable.removeRow(mPointer, pointers);
         return true;
     }

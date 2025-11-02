@@ -31,12 +31,12 @@ namespace RowIterators {
         void updateTablePointer();
 
         Index &mIndex;
-        BTree::Pointer mIndexPointer;
-        Index::RowId mRowId;
-        BTree::Pointer mTablePointer;
+        Index::Pointer mIndexPointer;
+        Table::RowId mRowId;
+        Table::Pointer mTablePointer;
 
-        BTree::Pointer mStartPointer;
-        BTree::Pointer mEndPointer;
+        Index::Pointer mStartPointer;
+        Index::Pointer mEndPointer;
         std::optional<Limit> mStartLimit;
         std::optional<Limit> mEndLimit;
     };

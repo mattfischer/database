@@ -1,7 +1,5 @@
 #include "Index.hpp"
 
-#include "Table.hpp"
-
 class IndexKeyDefinition : public BTree::KeyDefinition {
 public:
     IndexKeyDefinition(RecordSchema &schema) : mSchema(schema) {}
@@ -39,7 +37,7 @@ public:
     }
 };
 
-Index::Index(Table &table, std::vector<unsigned int> keys)
+Index::Index(Page &rootPage, Table &table, std::vector<unsigned int> keys)
 : mTable(table)
 , mKeys(std::move(keys))
 {
@@ -47,9 +45,7 @@ Index::Index(Table &table, std::vector<unsigned int> keys)
         mKeySchema.fields.push_back(table.schema().fields[index]);
     }
 
-    PageSet &pageSet = mTable.tree().pageSet();
-    Page &rootPage = pageSet.addPage();
-    mTree = std::make_unique<BTree>(pageSet, rootPage.index(), std::make_unique<IndexKeyDefinition>(mKeySchema), std::make_unique<RowIdDataDefinition>());
+    mTree = std::make_unique<BTree>(rootPage.pageSet(), rootPage.index(), std::make_unique<IndexKeyDefinition>(mKeySchema), std::make_unique<RowIdDataDefinition>());
     mTree->initialize();
 }
 
@@ -58,17 +54,12 @@ Table &Index::table()
     return mTable;
 }
 
-BTree &Index::tree()
-{
-    return *mTree;
-}
-
 RecordSchema &Index::keySchema()
 {
     return mKeySchema;
 }
 
-void Index::add(RowId rowId, RecordWriter &writer)
+void Index::add(Table::RowId rowId, RecordWriter &writer)
 {
     RecordWriter keyWriter(mKeySchema);
     for(unsigned int i=0; i<mKeys.size(); i++) {
@@ -76,15 +67,15 @@ void Index::add(RowId rowId, RecordWriter &writer)
     }
     BTree::KeyValue keyValue(keyWriter.dataSize());
     keyWriter.write(keyValue.data.data());
-    BTree::Pointer pointer = mTree->add(keyValue, sizeof(RowId));
+    Pointer pointer = mTree->add(keyValue, sizeof(Table::RowId));
     void *data = mTree->data(pointer);
     std::memcpy(data, &rowId, sizeof(rowId));
 }
 
-void Index::modify(RowId rowId, RecordWriter &writer)
+void Index::modify(Table::RowId rowId, RecordWriter &writer)
 {
-    BTree::Pointer tablePointer = mTable.tree().lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
-    void *data = mTable.tree().data(tablePointer);
+    Pointer tablePointer = mTable.lookup(rowId);
+    void *data = mTable.data(tablePointer);
     RecordReader reader(mTable.schema(), data);
 
     RecordWriter keyWriter(mKeySchema);
@@ -93,7 +84,7 @@ void Index::modify(RowId rowId, RecordWriter &writer)
     }
     BTree::KeyValue keyValue(keyWriter.dataSize());
     keyWriter.write(keyValue.data.data());
-    BTree::Pointer indexPointer = mTree->lookup(keyValue, BTree::SearchComparison::Equal, BTree::SearchPosition::First);
+    Pointer indexPointer = mTree->lookup(keyValue, BTree::SearchComparison::Equal, BTree::SearchPosition::First);
     mTree->remove(indexPointer);
 
     RecordWriter newKeyWriter(mKeySchema);
@@ -102,15 +93,15 @@ void Index::modify(RowId rowId, RecordWriter &writer)
     }
     BTree::KeyValue newKeyValue(newKeyWriter.dataSize());
     newKeyWriter.write(newKeyValue.data.data());
-    BTree::Pointer newPointer = mTree->add(newKeyValue, sizeof(RowId));
+    Pointer newPointer = mTree->add(newKeyValue, sizeof(Table::RowId));
     void *newData = mTree->data(newPointer);
     std::memcpy(newData, &rowId, sizeof(rowId));
 }
 
-void Index::remove(RowId rowId, std::span<BTree::Pointer*> trackPointers)
+void Index::remove(Table::RowId rowId, std::span<Pointer*> trackPointers)
 {
-    BTree::Pointer tablePointer = mTable.tree().lookup(BTree::Key(&rowId, sizeof(rowId)), BTree::SearchComparison::Equal, BTree::SearchPosition::First);
-    void *data = mTable.tree().data(tablePointer);
+    Pointer tablePointer = mTable.lookup(rowId);
+    void *data = mTable.data(tablePointer);
     RecordReader reader(mTable.schema(), data);
 
     RecordWriter keyWriter(mKeySchema);
@@ -119,13 +110,38 @@ void Index::remove(RowId rowId, std::span<BTree::Pointer*> trackPointers)
     }
     BTree::KeyValue keyValue(keyWriter.dataSize());
     keyWriter.write(keyValue.data.data());
-    BTree::Pointer indexPointer = mTree->lookup(keyValue, BTree::SearchComparison::Equal, BTree::SearchPosition::First);
+    Pointer indexPointer = mTree->lookup(keyValue, BTree::SearchComparison::Equal, BTree::SearchPosition::First);
     mTree->remove(indexPointer, trackPointers);
 }
 
-void *Index::data(BTree::Pointer pointer)
+Index::Pointer Index::first()
 {
-    return mTree->data(pointer);
+    return mTree->first();
+}
+
+Index::Pointer Index::last()
+{
+    return mTree->last();
+}
+
+bool Index::moveNext(Pointer &pointer)
+{
+    return mTree->moveNext(pointer);
+}
+
+bool Index::movePrev(Pointer &pointer)
+{
+    return mTree->movePrev(pointer);
+}
+
+Index::Pointer Index::lookup(BTree::Key key, BTree::SearchComparison comparison, BTree::SearchPosition position)
+{
+    return mTree->lookup(key, comparison, position);
+}
+
+Table::RowId Index::rowId(Pointer pointer)
+{
+    return *reinterpret_cast<Table::RowId*>(mTree->data(pointer));
 }
 
 void Index::print()

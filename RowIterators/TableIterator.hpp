@@ -21,7 +21,7 @@ namespace RowIterators {
 
     private:
         Table &mTable;
-        BTree::Pointer mPointer; 
+        Table::Pointer mPointer; 
     };
 }
 #endif

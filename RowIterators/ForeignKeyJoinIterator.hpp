@@ -26,7 +26,7 @@ namespace RowIterators {
         std::unique_ptr<RowIterator> mInputIterator;
         unsigned int mForeignKeyIndex;
         Table &mForeignTable;
-        BTree::Pointer mTablePointer;
+        Table::Pointer mTablePointer;
     };
 }
 #endif

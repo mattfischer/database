@@ -20,8 +20,9 @@ Table &Database::table(const std::string &name)
 
 void Database::addIndex(const std::string &name, const std::string &tableName, std::vector<unsigned int> keys)
 {
+    Page &rootPage = mPageSet.addPage();
     Table &table = *mTables[tableName];
-    std::unique_ptr index = std::make_unique<Index>(table, std::move(keys));
+    std::unique_ptr index = std::make_unique<Index>(rootPage, table, std::move(keys));
     table.addIndex(*index);
 
     mIndices[name] = std::move(index);

@@ -52,8 +52,8 @@ public:
     Pointer first();
     Pointer last();
 
-    Pointer next(Pointer pointer);
-    Pointer prev(Pointer pointer);
+    bool moveNext(Pointer &pointer);
+    bool movePrev(Pointer &pointer);
 
     void print();
 
