@@ -12,13 +12,13 @@ namespace RowIterators {
         struct Limit {
             BTree::SearchComparison comparison;
             BTree::SearchPosition position;
-            RecordWriter writer;
+            Record::Writer writer;
             int numFields;
         };
 
         IndexIterator(Index &index, std::optional<Limit> startLimit, std::optional<Limit> endLimit);
 
-        RecordSchema &schema() override;
+        Record::Schema &schema() override;
 
         void start() override;
         bool valid() override;

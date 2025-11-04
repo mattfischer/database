@@ -11,7 +11,7 @@ namespace RowIterators {
     public:
         SelectIterator(std::unique_ptr<RowIterator> inputIterator, std::unique_ptr<Expression> predicate);
 
-        RecordSchema &schema() override;
+        Record::Schema &schema() override;
 
         void start() override;
         bool valid() override;

@@ -9,7 +9,7 @@ namespace RowIterators {
     public:
         TableIterator(Table &table);
 
-        RecordSchema &schema() override;
+        Record::Schema &schema() override;
 
         void start() override;
         bool valid() override;

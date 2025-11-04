@@ -9,7 +9,7 @@ namespace RowIterators {
     public:
         ForeignKeyJoinIterator(std::unique_ptr<RowIterator> inputIterator, unsigned int foreignKeyIndex, Table &foreignTable);
 
-        RecordSchema &schema() override;
+        Record::Schema &schema() override;
 
         void start() override;
         bool valid() override;
@@ -22,7 +22,7 @@ namespace RowIterators {
     private:
         void updateTablePointer();
 
-        RecordSchema mSchema;
+        Record::Schema mSchema;
         std::unique_ptr<RowIterator> mInputIterator;
         unsigned int mForeignKeyIndex;
         Table &mForeignTable;

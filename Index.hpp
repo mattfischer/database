@@ -15,7 +15,7 @@ public:
 
     class RecordKey {
     public:
-        RecordKey(RecordWriter &writer) {
+        RecordKey(Record::Writer &writer) {
             mData.resize(writer.dataSize());
             writer.write(mData.data());
         }
@@ -31,10 +31,10 @@ public:
     typedef BTree::Pointer Pointer;
 
     Table &table();
-    RecordSchema &keySchema();
+    Record::Schema &keySchema();
 
-    void add(Table::RowId rowId, RecordWriter &writer);
-    void modify(Table::RowId rowId, RecordWriter &writer);
+    void add(Table::RowId rowId, Record::Writer &writer);
+    void modify(Table::RowId rowId, Record::Writer &writer);
     void remove(Table::RowId rowId, std::span<Pointer*> trackPointers);
     
     Pointer first();
@@ -51,7 +51,7 @@ public:
 private:
     Table &mTable;
     std::vector<unsigned int> mKeys;
-    RecordSchema mKeySchema;
+    Record::Schema mKeySchema;
     std::unique_ptr<BTree> mTree;
 };
 #endif

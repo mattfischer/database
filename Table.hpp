@@ -14,17 +14,17 @@ public:
     typedef uint32_t RowId;
     typedef BTree::Pointer Pointer;
 
-    Table(Page &rootPage, RecordSchema schema);
+    Table(Page &rootPage, Record::Schema schema);
 
     void initialize();
 
     std::vector<Index*> &indices();
 
-    RecordSchema &schema();
+    Record::Schema &schema();
 
-    RowId addRow(RecordWriter &writer);
-    void modifyRow(RowId rowId, RecordWriter &writer);
-    void modifyRow(Pointer pointer, RecordWriter &writer);    
+    RowId addRow(Record::Writer &writer);
+    void modifyRow(RowId rowId, Record::Writer &writer);
+    void modifyRow(Pointer pointer, Record::Writer &writer);    
     void removeRow(RowId rowId, std::span<Pointer*> trackPointers);
     void removeRow(Pointer pointer, std::span<Pointer*> trackPointers);
 
@@ -45,7 +45,7 @@ public:
 
 private:
     PageSet &mPageSet;
-    RecordSchema mSchema;
+    Record::Schema mSchema;
     BTree mTree;
     RowId mNextRowId;
     std::vector<Index*> mIndices;

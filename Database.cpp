@@ -5,7 +5,7 @@ PageSet &Database::pageSet()
     return mPageSet;
 }
 
-void Database::addTable(const std::string &name, RecordSchema schema)
+void Database::addTable(const std::string &name, Record::Schema schema)
 {
     Page &rootPage = mPageSet.addPage();
     std::unique_ptr table = std::make_unique<Table>(rootPage, std::move(schema));

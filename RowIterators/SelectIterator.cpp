@@ -7,7 +7,7 @@ namespace RowIterators {
     {
     }
 
-    RecordSchema &SelectIterator::schema()
+    Record::Schema &SelectIterator::schema()
     {
         return mInputIterator->schema();
     }

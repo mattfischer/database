@@ -6,42 +6,44 @@
 
 #include "Value.hpp"
 
-struct RecordSchema {
-    struct Field {
-        Value::Type type;
-        std::string name;
+namespace Record {
+    struct Schema {
+        struct Field {
+            Value::Type type;
+            std::string name;
+        };
+
+        std::vector<Field> fields;
     };
 
-    std::vector<Field> fields;
-};
+    class Writer {
+    public:
+        Writer(const Schema &schema);
 
-class RecordWriter {
-public:
-    RecordWriter(const RecordSchema &schema);
+        void setField(unsigned int index, const Value &value);
+        Value &field(unsigned int index);
 
-    void setField(unsigned int index, const Value &value);
-    Value &field(unsigned int index);
+        unsigned int dataSize();
+        void write(void *data);
 
-    unsigned int dataSize();
-    void write(void *data);
+    private:
+        const Schema &mSchema;
+        std::vector<Value> mValues;
+        uint16_t mExtraOffset;
+    };
 
-private:
-    const RecordSchema &mSchema;
-    std::vector<Value> mValues;
-    uint16_t mExtraOffset;
-};
+    class Reader {
+    public:
+        Reader(const Schema &schema, const void *data);
 
-class RecordReader {
-public:
-    RecordReader(const RecordSchema &schema, const void *data);
+        Value readField(unsigned int index);
 
-    Value readField(unsigned int index);
+        void print();
 
-    void print();
-
-private:
-    const RecordSchema &mSchema;
-    const uint8_t *mData;
-};
+    private:
+        const Schema &mSchema;
+        const uint8_t *mData;
+    };
+}
 
 #endif

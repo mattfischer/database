@@ -2,12 +2,12 @@
 
 class IndexKeyDefinition : public BTree::KeyDefinition {
 public:
-    IndexKeyDefinition(RecordSchema &schema) : mSchema(schema) {}
+    IndexKeyDefinition(Record::Schema &schema) : mSchema(schema) {}
 
     virtual BTreePage::Size fixedSize() override { return 0; }
     virtual int compare(BTree::Key a, BTree::Key b) override {
-        RecordReader readerA(mSchema, a.data);
-        RecordReader readerB(mSchema, b.data);
+        Record::Reader readerA(mSchema, a.data);
+        Record::Reader readerB(mSchema, b.data);
         for(int i=0; i<mSchema.fields.size(); i++) {
             Value valueA = readerA.readField(i);
             Value valueB = readerB.readField(i);
@@ -19,12 +19,12 @@ public:
     }
 
     virtual void print(BTree::Key key) override {
-        RecordReader reader(mSchema, key.data);
+        Record::Reader reader(mSchema, key.data);
         reader.print();
     }
 
 private:
-    RecordSchema &mSchema;
+    Record::Schema &mSchema;
 };
 
 class RowIdDataDefinition : public BTree::DataDefinition {
@@ -54,14 +54,14 @@ Table &Index::table()
     return mTable;
 }
 
-RecordSchema &Index::keySchema()
+Record::Schema &Index::keySchema()
 {
     return mKeySchema;
 }
 
-void Index::add(Table::RowId rowId, RecordWriter &writer)
+void Index::add(Table::RowId rowId, Record::Writer &writer)
 {
-    RecordWriter keyWriter(mKeySchema);
+    Record::Writer keyWriter(mKeySchema);
     for(unsigned int i=0; i<mKeys.size(); i++) {
         keyWriter.setField(i, writer.field(mKeys[i]));
     }
@@ -71,13 +71,13 @@ void Index::add(Table::RowId rowId, RecordWriter &writer)
     std::memcpy(data, &rowId, sizeof(rowId));
 }
 
-void Index::modify(Table::RowId rowId, RecordWriter &writer)
+void Index::modify(Table::RowId rowId, Record::Writer &writer)
 {
     Pointer tablePointer = mTable.lookup(rowId);
     void *data = mTable.data(tablePointer);
-    RecordReader reader(mTable.schema(), data);
+    Record::Reader reader(mTable.schema(), data);
 
-    RecordWriter keyWriter(mKeySchema);
+    Record::Writer keyWriter(mKeySchema);
     for(unsigned int i=0; i<mKeys.size(); i++) {
         keyWriter.setField(i, reader.readField(mKeys[i]));
     }
@@ -85,7 +85,7 @@ void Index::modify(Table::RowId rowId, RecordWriter &writer)
     Pointer indexPointer = mTree->lookup(key, BTree::SearchComparison::Equal, BTree::SearchPosition::First);
     mTree->remove(indexPointer);
 
-    RecordWriter newKeyWriter(mKeySchema);
+    Record::Writer newKeyWriter(mKeySchema);
     for(unsigned int i=0; i<mKeys.size(); i++) {
         newKeyWriter.setField(i, writer.field(mKeys[i]));
     }
@@ -99,9 +99,9 @@ void Index::remove(Table::RowId rowId, std::span<Pointer*> trackPointers)
 {
     Pointer tablePointer = mTable.lookup(rowId);
     void *data = mTable.data(tablePointer);
-    RecordReader reader(mTable.schema(), data);
+    Record::Reader reader(mTable.schema(), data);
 
-    RecordWriter keyWriter(mKeySchema);
+    Record::Writer keyWriter(mKeySchema);
     for(unsigned int i=0; i<mKeys.size(); i++) {
         keyWriter.setField(i, reader.readField(mKeys[i]));
     }

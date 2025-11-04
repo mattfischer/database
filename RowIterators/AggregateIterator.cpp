@@ -35,7 +35,7 @@ namespace RowIterators {
         }
     }
 
-    RecordSchema &AggregateIterator::schema()
+    Record::Schema &AggregateIterator::schema()
     {
         return mSchema;
     }

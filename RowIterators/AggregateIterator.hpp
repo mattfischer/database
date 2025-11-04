@@ -21,7 +21,7 @@ namespace RowIterators {
 
         AggregateIterator(std::unique_ptr<RowIterator> inputIterator, Operation operation, unsigned int field, unsigned int groupField);
 
-        RecordSchema &schema() override;
+        Record::Schema &schema() override;
 
         void start() override;
         bool valid() override;
@@ -39,7 +39,7 @@ namespace RowIterators {
         unsigned int mField;
         unsigned int mGroupField;
 
-        RecordSchema mSchema;
+        Record::Schema mSchema;
         Value mGroupValue;
         bool mValid;
         Value mValue;

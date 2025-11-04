@@ -19,20 +19,20 @@ public:
 
 class RowDataDefinition : public BTree::DataDefinition {
 public:
-    RowDataDefinition(RecordSchema &schema) : mSchema(schema) {}
+    RowDataDefinition(Record::Schema &schema) : mSchema(schema) {}
     BTreePage::Size fixedSize() override { return 0; }
 
     void print(void *data) override
     {
-        RecordReader reader(mSchema, data);
+        Record::Reader reader(mSchema, data);
         reader.print();
     }
 
 private:
-    RecordSchema &mSchema;
+    Record::Schema &mSchema;
 };
 
-Table::Table(Page &rootPage, RecordSchema schema)
+Table::Table(Page &rootPage, Record::Schema schema)
 : mPageSet(rootPage.pageSet())
 , mSchema(std::move(schema))
 , mTree(mPageSet, rootPage.index(), std::make_unique<RowIdKeyDefinition>(), std::make_unique<RowDataDefinition>(mSchema))
@@ -45,7 +45,7 @@ void Table::initialize()
     mNextRowId = 1;
 }
 
-RecordSchema &Table::schema()
+Record::Schema &Table::schema()
 {
     return mSchema;
 }
@@ -55,7 +55,7 @@ std::vector<Index*> &Table::indices()
     return mIndices;
 }
 
-Table::RowId Table::addRow(RecordWriter &writer)
+Table::RowId Table::addRow(Record::Writer &writer)
 {
     RowId rowId = mNextRowId;
     Pointer pointer = mTree.add(BTree::Key(&rowId, sizeof(rowId)), writer.dataSize());
@@ -71,7 +71,7 @@ Table::RowId Table::addRow(RecordWriter &writer)
     return rowId;
 }
 
-void Table::modifyRow(RowId rowId, RecordWriter &writer)
+void Table::modifyRow(RowId rowId, Record::Writer &writer)
 {
     for(auto &index : mIndices) {
         index->modify(rowId, writer);
@@ -83,7 +83,7 @@ void Table::modifyRow(RowId rowId, RecordWriter &writer)
     writer.write(data);
 }
 
-void Table::modifyRow(Pointer pointer, RecordWriter &writer)
+void Table::modifyRow(Pointer pointer, Record::Writer &writer)
 {
     RowId rowId = getRowId(pointer);
     for(auto &index : mIndices) {

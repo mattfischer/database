@@ -10,7 +10,7 @@ namespace RowIterators {
     public:
         SortIterator(std::unique_ptr<RowIterator> inputIterator, unsigned int sortField);
 
-        RecordSchema &schema() override;
+        Record::Schema &schema() override;
 
         void start() override;
         bool valid() override;

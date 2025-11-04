@@ -6,7 +6,7 @@ namespace RowIterators {
     {
     }
 
-    RecordSchema &TableIterator::schema()
+    Record::Schema &TableIterator::schema()
     {
         return mTable.schema();
     }
@@ -35,7 +35,7 @@ namespace RowIterators {
 
     bool TableIterator::modify(std::vector<ModifyEntry> entries)
     {
-        RecordWriter writer(mTable.schema());
+        Record::Writer writer(mTable.schema());
         for(int i=0; i<mTable.schema().fields.size(); i++) {
             writer.setField(i, getField(i));
         }
@@ -52,7 +52,7 @@ namespace RowIterators {
     Value TableIterator::getField(unsigned int index)
     {
         void *data = mTable.data(mPointer);
-        RecordReader reader(mTable.schema(), data);
+        Record::Reader reader(mTable.schema(), data);
 
         return reader.readField(index);
     }

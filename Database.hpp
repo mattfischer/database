@@ -12,7 +12,7 @@ class Database {
 public:
     PageSet &pageSet();
 
-    void addTable(const std::string &name, RecordSchema schema);
+    void addTable(const std::string &name, Record::Schema schema);
     Table &table(const std::string &name);
 
     void addIndex(const std::string &name, const std::string &tableName, std::vector<unsigned int> keys);

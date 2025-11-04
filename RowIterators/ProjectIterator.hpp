@@ -15,7 +15,7 @@ namespace RowIterators {
 
         ProjectIterator(std::unique_ptr<RowIterator> inputIterator, std::vector<FieldDefinition> fields);
 
-        RecordSchema &schema() override;
+        Record::Schema &schema() override;
 
         void start() override;
         bool valid() override;
@@ -28,7 +28,7 @@ namespace RowIterators {
     private:
         std::unique_ptr<RowIterator> mInputIterator;
         std::vector<FieldDefinition> mFields;
-        RecordSchema mSchema;
+        Record::Schema mSchema;
     };
 }
 #endif

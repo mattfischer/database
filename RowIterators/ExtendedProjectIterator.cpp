@@ -16,7 +16,7 @@ namespace RowIterators {
         }
     }
 
-    RecordSchema &ExtendedProjectIterator::schema()
+    Record::Schema &ExtendedProjectIterator::schema()
     {
         return mSchema;
     }

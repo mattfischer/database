@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 {
     Database database;
 
-    RecordSchema schema;
+    Record::Schema schema;
     schema.fields.push_back({Value::Type::String, "name"});
     schema.fields.push_back({Value::Type::Int, "value"});
     schema.fields.push_back({Value::Type::Int, "value2"});
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     for(int i=0; i<64; i++) {
         int key = rand() % 5;
         int key2 = rand() % 1000;
-        RecordWriter writer(table.schema());
+        Record::Writer writer(table.schema());
         std::stringstream ss;
         ss << "Row " << i;
         writer.setField(0, Value(ss.str()));
@@ -81,11 +81,11 @@ int main(int argc, char *argv[])
     std::cout << std::endl;
 
     Index &index = database.index("Table.1");
-    RecordWriter startWriter(index.keySchema());
+    Record::Writer startWriter(index.keySchema());
     startWriter.setField(0, Value(3));
     RowIterators::IndexIterator::Limit startLimit = { BTree::SearchComparison::Equal, BTree::SearchPosition::First, startWriter, 1 };
     
-    RecordWriter endWriter(index.keySchema());
+    Record::Writer endWriter(index.keySchema());
     endWriter.setField(0, Value(4));
     RowIterators::IndexIterator::Limit endLimit = { BTree::SearchComparison::Equal, BTree::SearchPosition::Last, endWriter, 1 };
     

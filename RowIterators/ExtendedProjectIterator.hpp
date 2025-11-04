@@ -15,7 +15,7 @@ namespace RowIterators {
 
         ExtendedProjectIterator(std::unique_ptr<RowIterator> inputIterator, std::vector<FieldDefinition> fieldDefinitions);
 
-        RecordSchema &schema() override;
+        Record::Schema &schema() override;
 
         void start() override;
         bool valid() override;
@@ -28,7 +28,7 @@ namespace RowIterators {
     private:
         void updateValues();
 
-        RecordSchema mSchema;
+        Record::Schema mSchema;
         std::unique_ptr<RowIterator> mInputIterator;
         std::vector<FieldDefinition> mFields;
         std::vector<Value> mValues;

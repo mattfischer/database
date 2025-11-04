@@ -8,7 +8,7 @@ class RowIterator {
 public:
     virtual ~RowIterator() = default;
 
-    virtual RecordSchema &schema() = 0;
+    virtual Record::Schema &schema() = 0;
 
     virtual void start() = 0;
     virtual bool valid() = 0;

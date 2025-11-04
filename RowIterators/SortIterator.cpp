@@ -11,7 +11,7 @@ namespace RowIterators {
         mSortField = sortField;
     }
 
-    RecordSchema &SortIterator::schema()
+    Record::Schema &SortIterator::schema()
     {
         return mInputIterator->schema();
     }
@@ -21,7 +21,7 @@ namespace RowIterators {
         mInputIterator->start();
 
         while(mInputIterator->valid()) {
-            RecordWriter writer(mInputIterator->schema());
+            Record::Writer writer(mInputIterator->schema());
             for(unsigned int i=0; i<mInputIterator->schema().fields.size(); i++) {
                 writer.setField(i, mInputIterator->getField(i));
             }
@@ -35,8 +35,8 @@ namespace RowIterators {
         }
 
         auto cmp = [&](unsigned int a, unsigned int b) {
-            RecordReader readerA(mInputIterator->schema(), mData.data() + a);
-            RecordReader readerB(mInputIterator->schema(), mData.data() + b);
+            Record::Reader readerA(mInputIterator->schema(), mData.data() + a);
+            Record::Reader readerB(mInputIterator->schema(), mData.data() + b);
             Value valueA = readerA.readField(mSortField);
             Value valueB = readerB.readField(mSortField);
 
@@ -69,7 +69,7 @@ namespace RowIterators {
 
     Value SortIterator::getField(unsigned int index)
     {
-        RecordReader reader(mInputIterator->schema(), mData.data() + mOffsets[mRow]);
+        Record::Reader reader(mInputIterator->schema(), mData.data() + mOffsets[mRow]);
 
         return reader.readField(index);
     }

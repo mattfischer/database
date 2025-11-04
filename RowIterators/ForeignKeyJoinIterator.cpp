@@ -17,7 +17,7 @@ namespace RowIterators {
         }
     }
 
-    RecordSchema &ForeignKeyJoinIterator::schema()
+    Record::Schema &ForeignKeyJoinIterator::schema()
     {
         return mSchema;
     }
@@ -55,7 +55,7 @@ namespace RowIterators {
             return mInputIterator->getField(index);
         } else {
             void *data = mForeignTable.data(mTablePointer);
-            RecordReader reader(mForeignTable.schema(), data);
+            Record::Reader reader(mForeignTable.schema(), data);
             return reader.readField(index - mInputIterator->schema().fields.size());
         }
     }

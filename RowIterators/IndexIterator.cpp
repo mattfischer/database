@@ -10,7 +10,7 @@ namespace RowIterators {
     {
     }
 
-    RecordSchema &IndexIterator::schema()
+    Record::Schema &IndexIterator::schema()
     {
         return mIndex.table().schema();
     }
@@ -75,14 +75,14 @@ namespace RowIterators {
     {
         void *data = mIndex.table().data(mTablePointer);
 
-        RecordReader reader(mIndex.table().schema(), data);
+        Record::Reader reader(mIndex.table().schema(), data);
         return reader.readField(index);
     }
 
     int IndexIterator::partialKeyCompare(BTree::Key a, BTree::Key b, int numFields)
     {
-        RecordReader readerA(mIndex.keySchema(), a.data);
-        RecordReader readerB(mIndex.keySchema(), b.data);
+        Record::Reader readerA(mIndex.keySchema(), a.data);
+        Record::Reader readerB(mIndex.keySchema(), b.data);
         for(int i=0; i<numFields; i++) {
             Value valueA = readerA.readField(i);
             Value valueB = readerB.readField(i);
