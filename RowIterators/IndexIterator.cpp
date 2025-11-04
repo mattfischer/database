@@ -21,7 +21,8 @@ namespace RowIterators {
             BTree::KeyComparator comparator = [&](BTree::Key a, BTree::Key b) {
                 return partialKeyCompare(a, b, mStartLimit->numFields);
             };
-            mStartPointer = mIndex.lookup(mStartLimit->key, comparator, mStartLimit->comparison, mStartLimit->position);
+            Index::RecordKey key(mStartLimit->writer);
+            mStartPointer = mIndex.lookup(key, comparator, mStartLimit->comparison, mStartLimit->position);
         } else {
             mStartPointer = mIndex.first();
         }
@@ -31,7 +32,8 @@ namespace RowIterators {
                 return partialKeyCompare(a, b, mEndLimit->numFields);
             };
             
-            mEndPointer = mIndex.lookup(mEndLimit->key, comparator, mEndLimit->comparison, mEndLimit->position);
+            Index::RecordKey key(mEndLimit->writer);
+            mEndPointer = mIndex.lookup(key, comparator, mEndLimit->comparison, mEndLimit->position);
         } else {
             mEndPointer = mIndex.last();
         }

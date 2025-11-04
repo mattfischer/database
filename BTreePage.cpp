@@ -698,6 +698,7 @@ BTreePage::Index BTreePage::search(Key key, KeyComparator &comparator, SearchCom
             case GreaterThanEqual: return cmp >= 0;
             case GreaterThan: return cmp > 0;
         }
+        return false;
     };
 
     if(match(startCmp) && position == First) return start;

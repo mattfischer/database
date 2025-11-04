@@ -19,23 +19,6 @@ public:
     typedef BTreePage::Pointer Pointer;
     typedef BTreePage::KeyComparator KeyComparator;
 
-    struct KeyValue {
-        KeyValue() = default;
-        KeyValue(Key key) {
-            data.resize(key.size);
-            std::memcpy(data.data(), key.data, key.size);
-        }
-        KeyValue(size_t keySize) {
-            data.resize(keySize);
-        }
-
-        operator Key() {
-            return Key(data.data(), data.size());
-        }
-
-        std::vector<uint8_t> data;
-    };
-
     BTree(PageSet &pageSet, Page::Index rootIndex, std::unique_ptr<KeyDefinition> keyDefinition, std::unique_ptr<DataDefinition> dataDefinition);
 
     void initialize();

@@ -40,6 +40,23 @@ BTree::Pointer BTree::lookup(Key key, SearchComparison comparison, SearchPositio
     return lookup(key, defaultComparator, comparison, position);
 }
 
+struct KeyValue {
+    KeyValue() = default;
+    KeyValue(BTree::Key key) {
+        data.resize(key.size);
+        std::memcpy(data.data(), key.data, key.size);
+    }
+    KeyValue(size_t keySize) {
+        data.resize(keySize);
+    }
+
+    operator BTree::Key() {
+        return BTree::Key(data.data(), data.size());
+    }
+
+    std::vector<uint8_t> data;
+};
+
 BTree::Pointer BTree::add(Key key, BTreePage::Size dataSize)
 {
     BTreePage leafPage = findLeaf(key, SearchComparison::GreaterThan, SearchPosition::First);

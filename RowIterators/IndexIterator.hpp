@@ -12,7 +12,7 @@ namespace RowIterators {
         struct Limit {
             BTree::SearchComparison comparison;
             BTree::SearchPosition position;
-            BTree::KeyValue key;
+            RecordWriter writer;
             int numFields;
         };
 

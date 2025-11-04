@@ -13,6 +13,21 @@ class Index {
 public:
     Index(Page &rootPage, Table &table, std::vector<unsigned int> keys);
 
+    class RecordKey {
+    public:
+        RecordKey(RecordWriter &writer) {
+            mData.resize(writer.dataSize());
+            writer.write(mData.data());
+        }
+
+        operator BTree::Key() {
+            return BTree::Key(mData.data(), mData.size());
+        }
+ 
+    private:
+        std::vector<uint8_t> mData;
+    };
+
     typedef BTree::Pointer Pointer;
 
     Table &table();

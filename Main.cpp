@@ -83,17 +83,11 @@ int main(int argc, char *argv[])
     Index &index = database.index("Table.1");
     RecordWriter startWriter(index.keySchema());
     startWriter.setField(0, Value(3));
-    BTree::KeyValue startValue;
-    startValue.data.resize(startWriter.dataSize());
-    startWriter.write(startValue.data.data());
-    RowIterators::IndexIterator::Limit startLimit = { BTree::SearchComparison::Equal, BTree::SearchPosition::First, startValue, 1 };
+    RowIterators::IndexIterator::Limit startLimit = { BTree::SearchComparison::Equal, BTree::SearchPosition::First, startWriter, 1 };
     
     RecordWriter endWriter(index.keySchema());
     endWriter.setField(0, Value(4));
-    BTree::KeyValue endValue;
-    endValue.data.resize(endWriter.dataSize());
-    endWriter.write(endValue.data.data());
-    RowIterators::IndexIterator::Limit endLimit = { BTree::SearchComparison::Equal, BTree::SearchPosition::Last, endValue, 1 };
+    RowIterators::IndexIterator::Limit endLimit = { BTree::SearchComparison::Equal, BTree::SearchPosition::Last, endWriter, 1 };
     
     RowIterators::IndexIterator indexIterator(index, startLimit, endLimit);
     indexIterator.start();
