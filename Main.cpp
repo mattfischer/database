@@ -4,6 +4,7 @@
 #include "PageSet.hpp"
 #include "Record.hpp"
 #include "Table.hpp"
+#include "Index.hpp"
 
 #include "RowIterators/AggregateIterator.hpp"
 #include "RowIterators/ExtendedProjectIterator.hpp"
@@ -53,12 +54,8 @@ int main(int argc, char *argv[])
 
     database.addTable("Table", std::move(schema));
 
-    std::vector<unsigned int> keys;
-    keys.push_back(0);
+    std::vector<unsigned int> keys = {1, 2};
     database.addIndex("Table.1", "Table", std::move(keys));
-
-    keys.push_back(1);
-    database.addIndex("Table.2", "Table", std::move(keys));
 
     Table &table = database.table("Table");
     srand(12345);
@@ -83,21 +80,24 @@ int main(int argc, char *argv[])
     std::cout << "-----------" << std::endl;
     std::cout << std::endl;
 
-    std::unique_ptr<RowIterator> tableIterator2 = std::make_unique<RowIterators::TableIterator>(table);
-    std::unique_ptr<Expression> expression = std::make_unique<CompareExpression>(CompareExpression::CompareType::LessThan,
-        std::make_unique<FieldExpression>(2),
-        std::make_unique<ConstantExpression>(Value(500))
-    );
-    std::unique_ptr<RowIterator> selectIterator = std::make_unique<RowIterators::SelectIterator>(std::move(tableIterator2), std::move(expression));
-    selectIterator->start();
-    modifyIterator(*selectIterator);
-
-    RowIterators::TableIterator tableIterator3(database.table("Table"));
-    tableIterator3.start();
-    printIterator(tableIterator3);
-    std::cout << std::endl;
-    std::cout << "-----------" << std::endl;
-    std::cout << std::endl;
+    Index &index = database.index("Table.1");
+    RecordWriter startWriter(index.keySchema());
+    startWriter.setField(0, Value(3));
+    BTree::KeyValue startValue;
+    startValue.data.resize(startWriter.dataSize());
+    startWriter.write(startValue.data.data());
+    RowIterators::IndexIterator::Limit startLimit = { BTree::SearchComparison::Equal, BTree::SearchPosition::First, startValue, 1 };
+    
+    RecordWriter endWriter(index.keySchema());
+    endWriter.setField(0, Value(4));
+    BTree::KeyValue endValue;
+    endValue.data.resize(endWriter.dataSize());
+    endWriter.write(endValue.data.data());
+    RowIterators::IndexIterator::Limit endLimit = { BTree::SearchComparison::Equal, BTree::SearchPosition::Last, endValue, 1 };
+    
+    RowIterators::IndexIterator indexIterator(index, startLimit, endLimit);
+    indexIterator.start();
+    printIterator(indexIterator);
 
     return 0;
 }

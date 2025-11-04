@@ -18,13 +18,20 @@ namespace RowIterators {
     void IndexIterator::start()
     {
         if(mStartLimit) {
-            mStartPointer = mIndex.lookup(mStartLimit->key, mStartLimit->comparison, mStartLimit->position);
+            BTree::KeyComparator comparator = [&](BTree::Key a, BTree::Key b) {
+                return partialKeyCompare(a, b, mStartLimit->numFields);
+            };
+            mStartPointer = mIndex.lookup(mStartLimit->key, comparator, mStartLimit->comparison, mStartLimit->position);
         } else {
             mStartPointer = mIndex.first();
         }
 
         if(mEndLimit) {
-            mEndPointer = mIndex.lookup(mEndLimit->key, mEndLimit->comparison, mEndLimit->position);
+            BTree::KeyComparator comparator = [&](BTree::Key a, BTree::Key b) {
+                return partialKeyCompare(a, b, mEndLimit->numFields);
+            };
+            
+            mEndPointer = mIndex.lookup(mEndLimit->key, comparator, mEndLimit->comparison, mEndLimit->position);
         } else {
             mEndPointer = mIndex.last();
         }
@@ -68,6 +75,20 @@ namespace RowIterators {
 
         RecordReader reader(mIndex.table().schema(), data);
         return reader.readField(index);
+    }
+
+    int IndexIterator::partialKeyCompare(BTree::Key a, BTree::Key b, int numFields)
+    {
+        RecordReader readerA(mIndex.keySchema(), a.data);
+        RecordReader readerB(mIndex.keySchema(), b.data);
+        for(int i=0; i<numFields; i++) {
+            Value valueA = readerA.readField(i);
+            Value valueB = readerB.readField(i);
+
+            if(valueA < valueB) return -1;
+            if(valueA > valueB) return 1;
+        }
+        return 0;
     }
 
     void IndexIterator::updateTablePointer()

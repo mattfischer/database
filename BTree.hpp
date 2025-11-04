@@ -17,6 +17,7 @@ public:
     typedef BTreePage::SearchComparison SearchComparison;
     typedef BTreePage::SearchPosition SearchPosition;
     typedef BTreePage::Pointer Pointer;
+    typedef BTreePage::KeyComparator KeyComparator;
 
     struct KeyValue {
         KeyValue() = default;
@@ -41,6 +42,7 @@ public:
 
     PageSet &pageSet();
 
+    Pointer lookup(Key key, KeyComparator &comparator, SearchComparison comparison, SearchPosition position);
     Pointer lookup(Key key, SearchComparison comparison, SearchPosition position);
     Pointer add(Key key, BTreePage::Size size);
     bool resize(Pointer pointer, BTreePage::Size size);
@@ -63,7 +65,9 @@ private:
     std::unique_ptr<KeyDefinition> mKeyDefinition;
     std::unique_ptr<DataDefinition> mDataDefinition;
 
+    BTreePage findLeaf(Key key, KeyComparator &comparator, SearchComparison comparison, SearchPosition position);
     BTreePage findLeaf(Key key, SearchComparison comparison, SearchPosition position);
+
     BTreePage getPage(Page::Index index);
     int keyCompare(Key a, Key b);
 };

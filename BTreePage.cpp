@@ -256,9 +256,9 @@ bool BTreePage::canSupplyItem(Index index)
     return freeSpace() + cellSize(index) + sizeof(uint16_t) < page().size() / 2;
 }
 
-BTreePage::Index BTreePage::leafLookup(Key key, SearchComparison comparison, SearchPosition position)
+BTreePage::Index BTreePage::leafLookup(Key key, KeyComparator &comparator, SearchComparison comparison, SearchPosition position)
 {
-    return search(key, comparison, position);
+    return search(key, comparator, comparison, position);
 }
 
 bool BTreePage::leafCanAdd(size_t keySize, size_t dataSize)
@@ -345,42 +345,42 @@ void BTreePage::indirectAdd(Key key, BTreePage &childPage)
     }
 }
 
-Page::Index BTreePage::indirectLookup(Key key, SearchComparison comparison, SearchPosition position)
+Page::Index BTreePage::indirectLookup(Key key, KeyComparator &comparator, SearchComparison comparison, SearchPosition position)
 {
     Index index;
     
     switch(comparison) {
         case LessThan:
         case LessThanEqual:
-            index = search(key, comparison, position);
+            index = search(key, comparator, comparison, position);
             break;
         case Equal:
-            index = search(key, comparison, position);
+            index = search(key, comparator,comparison, position);
             if(index == kInvalidIndex) {
-                index = search(key, LessThan, Last);
+                index = search(key, comparator, LessThan, Last);
             }
             break;
         case GreaterThanEqual:
             if(position == First) {
-                index = search(key, Equal, First);
+                index = search(key, comparator, Equal, First);
                 if(index == kInvalidIndex) {
-                    index = search(key, LessThan, Last);
+                    index = search(key, comparator, LessThan, Last);
                     if(index == kInvalidIndex) {
-                        index = search(key, GreaterThan, First);
+                        index = search(key, comparator, GreaterThan, First);
                     }
                 }
             } else {
-                index = search(key, comparison, position);
+                index = search(key, comparator, comparison, position);
             }
             break;
         case GreaterThan:
             if(position == First) {
-                index = search(key, LessThanEqual, Last);
+                index = search(key, comparator, LessThanEqual, Last);
                 if(index == kInvalidIndex) {
-                    index = search(key, GreaterThan, First);
+                    index = search(key, comparator, GreaterThan, First);
                 }
             } else {
-                index = search(key, comparison, position);
+                index = search(key, comparator, comparison, position);
             }
     }
 
@@ -678,7 +678,7 @@ bool BTreePage::canAllocateCell(Size keySize, Size dataSize)
     return (head.freeSpace >= totalSize + sizeof(uint16_t));
 }
 
-BTreePage::Index BTreePage::search(Key key, SearchComparison comparison, SearchPosition position)
+BTreePage::Index BTreePage::search(Key key, KeyComparator &comparator, SearchComparison comparison, SearchPosition position)
 {
     if(numCells() == 0) {
         return kInvalidIndex;
@@ -687,8 +687,8 @@ BTreePage::Index BTreePage::search(Key key, SearchComparison comparison, SearchP
     Index start = 0;
     Index end = numCells() - 1;
 
-    int startCmp = (type() == Indirect) ? -1 : keyCompare(cellKey(start), key);
-    int endCmp = keyCompare(cellKey(end), key);
+    int startCmp = (type() == Indirect) ? -1 : comparator(cellKey(start), key);
+    int endCmp = comparator(cellKey(end), key);
 
     auto match = [&](int cmp) {
         switch(comparison) {
@@ -713,14 +713,14 @@ BTreePage::Index BTreePage::search(Key key, SearchComparison comparison, SearchP
 
     while(true) {
         if(end == start) {
-            int cmp = (type() == Indirect && start == 0) ? -1 : keyCompare(cellKey(start), key);
+            int cmp = (type() == Indirect && start == 0) ? -1 : comparator(cellKey(start), key);
             if(match(cmp)) return start;
             else return kInvalidIndex;
         }
 
         if(end == start + 1) {
-            int startCmp = (type() == Indirect && start == 0) ? -1 : keyCompare(cellKey(start), key);
-            int endCmp = keyCompare(cellKey(end), key);
+            int startCmp = (type() == Indirect && start == 0) ? -1 : comparator(cellKey(start), key);
+            int endCmp = comparator(cellKey(end), key);
 
             if(match(startCmp) && position == First) return start;
             if(match(endCmp) && position == Last) return end;
@@ -730,7 +730,7 @@ BTreePage::Index BTreePage::search(Key key, SearchComparison comparison, SearchP
         }
 
         Index mid = (start + end) / 2;
-        int midCmp = keyCompare(cellKey(mid), key);
+        int midCmp = comparator(cellKey(mid), key);
         if(match(midCmp)) {
             switch(position) {
                 case First: end = mid; break;
@@ -751,9 +751,13 @@ BTreePage::Index BTreePage::search(Key key, SearchComparison comparison, SearchP
     }
 }
 
-int BTreePage::keyCompare(Key a, Key b)
+BTreePage::Index BTreePage::search(Key key, SearchComparison comparison, SearchPosition position)
 {
-    return mKeyDefinition.compare(a, b);
+    KeyComparator defaultComparator = [&](Key a, Key b) {
+        return mKeyDefinition.compare(a, b);
+    };
+
+    return search(key, defaultComparator, comparison, position);
 }
 
 BTreePage BTreePage::getPage(Page::Index index)

@@ -134,9 +134,9 @@ bool Index::movePrev(Pointer &pointer)
     return mTree->movePrev(pointer);
 }
 
-Index::Pointer Index::lookup(BTree::Key key, BTree::SearchComparison comparison, BTree::SearchPosition position)
+Index::Pointer Index::lookup(BTree::Key key, BTree::KeyComparator &comparator, BTree::SearchComparison comparison, BTree::SearchPosition position)
 {
-    return mTree->lookup(key, comparison, position);
+    return mTree->lookup(key, comparator, comparison, position);
 }
 
 Table::RowId Index::rowId(Pointer pointer)

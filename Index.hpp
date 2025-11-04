@@ -28,7 +28,7 @@ public:
     bool moveNext(Pointer &pointer);
     bool movePrev(Pointer &pointer);
 
-    Pointer lookup(BTree::Key key, BTree::SearchComparison comparison, BTree::SearchPosition position);
+    Pointer lookup(BTree::Key key, BTree::KeyComparator &comparator, BTree::SearchComparison comparison, BTree::SearchPosition position);
     Table::RowId rowId(Pointer pointer);
 
     void print();

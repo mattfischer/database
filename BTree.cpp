@@ -21,15 +21,23 @@ PageSet &BTree::pageSet()
     return mPageSet;
 }
 
-BTree::Pointer BTree::lookup(Key key, SearchComparison comparison, SearchPosition position)
+BTree::Pointer BTree::lookup(Key key, KeyComparator &comparator, SearchComparison comparison, SearchPosition position)
 {
-    BTreePage leafPage = findLeaf(key, comparison, position);
-    BTreePage::Index index = leafPage.leafLookup(key, comparison, position);
+    BTreePage leafPage = findLeaf(key, comparator, comparison, position);
+    BTreePage::Index index = leafPage.leafLookup(key, comparator, comparison, position);
     if(index == BTreePage::kInvalidIndex) {
         return {Page::kInvalidIndex, 0};
     } else {
         return {leafPage.pageIndex(), index};
     }
+}
+
+BTree::Pointer BTree::lookup(Key key, SearchComparison comparison, SearchPosition position)
+{
+    KeyComparator defaultComparator = [&](Key a, Key b) {
+        return mKeyDefinition->compare(a, b);
+    };
+    return lookup(key, defaultComparator, comparison, position);
 }
 
 BTree::Pointer BTree::add(Key key, BTreePage::Size dataSize)
@@ -215,7 +223,7 @@ void BTree::print()
 }
 
 
-BTreePage BTree::findLeaf(Key key, SearchComparison comparison, SearchPosition position)
+BTreePage BTree::findLeaf(Key key, KeyComparator &comparator, SearchComparison comparison, SearchPosition position)
 {
     Page::Index index = mRootIndex;
     while(true) {
@@ -224,12 +232,20 @@ BTreePage BTree::findLeaf(Key key, SearchComparison comparison, SearchPosition p
             break;
         }
         
-        index = page.indirectLookup(key, comparison, position);
+        index = page.indirectLookup(key, comparator, comparison, position);
     }
 
     return getPage(index);
 }
 
+BTreePage BTree::findLeaf(Key key, SearchComparison comparison, SearchPosition position)
+{
+    KeyComparator defaultComparator = [&](Key a, Key b) {
+        return mKeyDefinition->compare(a, b);
+    };
+    return findLeaf(key, defaultComparator, comparison, position);
+}
+    
 BTreePage BTree::getPage(Page::Index index)
 {
     return BTreePage(mPageSet.page(index), *mKeyDefinition, *mDataDefinition);

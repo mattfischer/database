@@ -5,6 +5,7 @@
 
 #include <string>
 #include <span>
+#include <functional>
 
 class BTreePage {
 public:
@@ -27,6 +28,8 @@ public:
         void *data = nullptr;
         Size size = 0;
     };
+
+    typedef std::function<int(Key, Key)> KeyComparator;
 
     class KeyDefinition {
     public:
@@ -101,7 +104,7 @@ public:
     bool isDeficient();
     bool canSupplyItem(Index index);
 
-    Index leafLookup(Key key, SearchComparison comparison, SearchPosition position);
+    Index leafLookup(Key key, KeyComparator &comparator, SearchComparison comparison, SearchPosition position);
     bool leafCanAdd(size_t keySize, size_t dataSize);
     Index leafAdd(Key key, size_t dataSize);
     void leafRemove(Index index, std::span<Pointer*> trackPointers);
@@ -110,7 +113,7 @@ public:
     bool indirectCanAdd(size_t keySize);
     void indirectAdd(Key key, BTreePage &childPage);
     Page::Index indirectPageIndex(Index index);
-    Page::Index indirectLookup(Key key, SearchComparison comparison, SearchPosition position);
+    Page::Index indirectLookup(Key key, KeyComparator &comparator, SearchComparison comparison, SearchPosition position);
     void indirectRectifyDeficientChild(BTreePage &childPage, std::span<Pointer*> trackPointers);
     void indirectPushHead(Key oldHeadKey, BTreePage &childPage);
     void indirectPushTail(Key key, BTreePage &childPage);
@@ -146,12 +149,12 @@ private:
 
     void removeCells(Index begin, Index end);
 
+    Index search(Key key, KeyComparator &comparator, SearchComparison comparison, SearchPosition position);
     Index search(Key key, SearchComparison comparison, SearchPosition position);
 
     Size freeSpace();
     void defragPage();
 
-    int keyCompare(Key a, Key b);
     BTreePage getPage(Page::Index index);
 
     PageSet &pageSet();
