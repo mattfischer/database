@@ -47,12 +47,7 @@ int main(int argc, char *argv[])
 {
     Database database;
 
-    Record::Schema schema;
-    schema.fields.push_back({Value::Type::String, "name"});
-    schema.fields.push_back({Value::Type::Int, "value"});
-    schema.fields.push_back({Value::Type::Int, "value2"});
-
-    database.addTable("Table", std::move(schema));
+    database.executeQuery("CREATE TABLE Table (STRING name, INTEGER value, INTEGER value2)");
 
     std::vector<unsigned int> keys = {1, 2};
     database.addIndex("Table.1", "Table", std::move(keys));

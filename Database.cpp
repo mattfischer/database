@@ -1,10 +1,30 @@
 #include "Database.hpp"
 
+#include "QueryParser.hpp"
+
 PageSet &Database::pageSet()
 {
     return mPageSet;
 }
 
+void Database::executeQuery(const std::string &queryString)
+{
+    QueryParser parser(queryString);
+
+    std::unique_ptr<Query> query = parser.parse();
+    if(!query) {
+        return;
+    }
+
+    switch(query->type) {
+        case Query::Type::CreateTable:
+        {
+            auto &createTable = std::get<Query::CreateTable>(query->query);
+            addTable(createTable.name, createTable.schema);
+            break;
+        }
+    }
+}
 void Database::addTable(const std::string &name, Record::Schema schema)
 {
     Page &rootPage = mPageSet.addPage();

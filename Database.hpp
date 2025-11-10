@@ -12,6 +12,8 @@ class Database {
 public:
     PageSet &pageSet();
 
+    void executeQuery(const std::string &queryString);
+
     void addTable(const std::string &name, Record::Schema schema);
     Table &table(const std::string &name);
 
