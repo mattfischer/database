@@ -55,21 +55,16 @@ int main(int argc, char *argv[])
     query("CREATE TABLE Table (STRING name, INTEGER value, INTEGER value2)");
     query("CREATE INDEX Table1 ON Table (value, value2)");
 
-    Table &table = database.table("Table");
     srand(12345);
     for(int i=0; i<64; i++) {
         int key = rand() % 5;
         int key2 = rand() % 1000;
-        Record::Writer writer(table.schema());
         std::stringstream ss;
-        ss << "Row " << i;
-        writer.setField(0, Value(ss.str()));
-        writer.setField(1, Value(key));
-        writer.setField(2, Value(key2));
-        table.addRow(writer);
+        ss << "INSERT INTO Table VALUES (\"Row " << i << "\", " << key << ", " << key2 << ")";
+        query(ss.str());
     }
 
-    table.print();
+    database.table("Table").print();
 
     RowIterators::TableIterator tableIterator(database.table("Table"));
     tableIterator.start();

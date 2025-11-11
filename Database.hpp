@@ -25,6 +25,7 @@ public:
 private:
     QueryResult createTable(Query::CreateTable &createTable);
     QueryResult createIndex(Query::CreateIndex &createIndex);
+    QueryResult insertInto(Query::InsertInto &insertInto);
 
     PageSet mPageSet;
     std::map<std::string, std::unique_ptr<Table>> mTables;

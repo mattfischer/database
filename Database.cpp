@@ -24,6 +24,8 @@ Database::QueryResult Database::executeQuery(const std::string &queryString)
             return createTable(std::get<Query::CreateTable>(query->query));
         case Query::Type::CreateIndex:
             return createIndex(std::get<Query::CreateIndex>(query->query));
+        case Query::Type::InsertInto:
+            return insertInto(std::get<Query::InsertInto>(query->query));
         default:
             return {};
     }
@@ -34,9 +36,9 @@ Database::QueryResult Database::createTable(Query::CreateTable &createTable)
     Page &rootPage = mPageSet.addPage();
     std::unique_ptr table = std::make_unique<Table>(rootPage, std::move(createTable.schema));
     table->initialize();
-    mTables[createTable.name] = std::move(table);
+    mTables[createTable.tableName] = std::move(table);
 
-    return {"Created table " + createTable.name};
+    return {"Created table " + createTable.tableName};
 }
 
 Database::QueryResult Database::createIndex(Query::CreateIndex &createIndex)
@@ -74,6 +76,38 @@ Database::QueryResult Database::createIndex(Query::CreateIndex &createIndex)
     mIndices[createIndex.indexName] = std::move(index);
 
     return {"Created index " + createIndex.indexName};
+}
+
+Database::QueryResult Database::insertInto(Query::InsertInto &insertInto)
+{
+    auto it = mTables.find(insertInto.tableName);
+    if(it == mTables.end()) {
+        std::stringstream ss;
+        ss << "Error: Table " << insertInto.tableName << " does not exist";
+        return {ss.str()};
+    }
+    Table &table = *it->second;
+
+    if(insertInto.values.size() != table.schema().fields.size()) {
+        std::stringstream ss;
+        ss << "Error: Incorrect number of values for table " << insertInto.tableName;
+        return {ss.str()};
+    }
+
+    Record::Writer writer(table.schema());
+    for(int i=0; i<insertInto.values.size(); i++) {
+        if(insertInto.values[i].type() != table.schema().fields[i].type) {
+            std::stringstream ss;
+            ss << "Error: Incorrect type for column " << table.schema().fields[i].name << " in table " << insertInto.tableName;
+            return {ss.str()};
+        }
+
+        writer.setField(i, insertInto.values[i]);
+    }
+
+    table.addRow(writer);
+
+    return {"Added row to table " + insertInto.tableName};
 }
 
 Table &Database::table(const std::string &name)

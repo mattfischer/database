@@ -121,6 +121,53 @@ Value::Type QueryParser::expectType()
     return result;
 }
 
+Value QueryParser::expectValue()
+{
+    if(mQueryString[mPos] == '\"') {
+        int pos = mPos + 1;
+        while(pos < mQueryString.size()) {
+            if(mQueryString[pos] == '\"') {
+                break;
+            }
+            pos++;
+        }
+
+        if(pos == mQueryString.size()) {
+            throw ParseError{"Unterminated string constant"};
+        }
+        std::string substr = mQueryString.substr(mPos + 1, pos - mPos - 1);
+        mPos = pos + 1;
+        skipWhitespace();
+        return Value(substr);
+    } else if(std::isdigit(mQueryString[mPos]) || mQueryString[mPos] == '.') {
+        bool isFloat = false;
+        int pos = mPos;
+        while(pos < mQueryString.size()) {
+            if(mQueryString[pos] == '.') {
+                isFloat = true;
+            } else if(!std::isdigit(mQueryString[pos])) {
+                break;
+            }
+            pos++;
+        }
+
+        std::string substr = mQueryString.substr(mPos, pos - mPos);
+        mPos = pos;
+        skipWhitespace();
+        if(isFloat) {
+            return Value((float)std::atof(substr.c_str()));
+        } else {
+            return Value(std::atoi(substr.c_str()));
+        }
+    } else if(matchLiteral("true")) {
+        return Value(true);
+    } else if(matchLiteral("false")) {
+        return Value(false);
+    } else {
+        throwExpected("<value>");
+    }
+}
+
 std::unique_ptr<Query> QueryParser::parseQuery()
 {
     if(matchLiteral("CREATE")) {
@@ -131,16 +178,19 @@ std::unique_ptr<Query> QueryParser::parseQuery()
         }
 
         throwExpected("TABLE | INDEX");
+    } else if(matchLiteral("INSERT")) {
+        expectLiteral("INTO");
+        return parseInsertInto();
     }
 
-    throwExpected("query");
+    throwExpected("<query>");
 }
 
 std::unique_ptr<Query> QueryParser::parseCreateTable()
 {
     Query::CreateTable createTable;
 
-    createTable.name = expectIdentifier();
+    createTable.tableName = expectIdentifier();
     expectLiteral("(");
     while(!matchLiteral(")")) {
         Value::Type type = expectType();
@@ -182,4 +232,28 @@ std::unique_ptr<Query> QueryParser::parseCreateIndex()
     query->query = std::move(createIndex);
 
     return query;    
+}
+
+std::unique_ptr<Query> QueryParser::parseInsertInto()
+{
+    Query::InsertInto insertInto;
+
+    insertInto.tableName = expectIdentifier();
+    expectLiteral("VALUES");
+
+    expectLiteral("(");
+    while(!matchLiteral(")")) {
+        Value value = expectValue();
+        insertInto.values.push_back(value);
+
+        if(matchLiteral(",")) {
+            continue;
+        }
+    }
+
+    auto query = std::make_unique<Query>();
+    query->type = Query::Type::InsertInto;
+    query->query = std::move(insertInto);
+
+    return query;
 }

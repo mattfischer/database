@@ -8,7 +8,7 @@
 
 struct Query {
     struct CreateTable {
-        std::string name;
+        std::string tableName;
         Record::Schema schema;
     };
 
@@ -18,13 +18,19 @@ struct Query {
         std::vector<std::string> columns;
     };
 
+    struct InsertInto {
+        std::string tableName;
+        std::vector<Value> values;
+    };
+
     enum class Type {
         CreateTable,
-        CreateIndex
+        CreateIndex,
+        InsertInto,
     };
 
     Type type;
-    std::variant<CreateTable, CreateIndex> query;
+    std::variant<CreateTable, CreateIndex, InsertInto> query;
 };
 
 #endif
