@@ -24,6 +24,7 @@ std::unique_ptr<Query> QueryParser::parse()
 
         ss << "Error, character " << err.pos << ": " << err.message;
         mErrorMessage = ss.str();
+        return nullptr;
     }
 }
 
@@ -125,9 +126,11 @@ std::unique_ptr<Query> QueryParser::parseQuery()
     if(matchLiteral("CREATE")) {
         if(matchLiteral("TABLE")) {
             return parseCreateTable();
+        } else if(matchLiteral("INDEX")) {
+            return parseCreateIndex();
         }
 
-        throwExpected("TABLE");
+        throwExpected("TABLE | INDEX");
     }
 
     throwExpected("query");
@@ -152,6 +155,31 @@ std::unique_ptr<Query> QueryParser::parseCreateTable()
     auto query = std::make_unique<Query>();
     query->type = Query::Type::CreateTable;
     query->query = std::move(createTable);
+
+    return query;    
+}
+
+std::unique_ptr<Query> QueryParser::parseCreateIndex()
+{
+    Query::CreateIndex createIndex;
+
+    createIndex.indexName = expectIdentifier();
+    expectLiteral("ON");
+    createIndex.tableName = expectIdentifier();
+
+    expectLiteral("(");
+    while(!matchLiteral(")")) {
+        std::string name = expectIdentifier();
+        createIndex.columns.push_back(name);
+
+        if(matchLiteral(",")) {
+            continue;
+        }
+    }
+
+    auto query = std::make_unique<Query>();
+    query->type = Query::Type::CreateIndex;
+    query->query = std::move(createIndex);
 
     return query;    
 }

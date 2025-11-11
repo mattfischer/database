@@ -12,12 +12,19 @@ struct Query {
         Record::Schema schema;
     };
 
+    struct CreateIndex {
+        std::string indexName;
+        std::string tableName;
+        std::vector<std::string> columns;
+    };
+
     enum class Type {
-        CreateTable
+        CreateTable,
+        CreateIndex
     };
 
     Type type;
-    std::variant<CreateTable> query;
+    std::variant<CreateTable, CreateIndex> query;
 };
 
 #endif

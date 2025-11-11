@@ -27,6 +27,7 @@ private:
 
     std::unique_ptr<Query> parseQuery();
     std::unique_ptr<Query> parseCreateTable();
+    std::unique_ptr<Query> parseCreateIndex();
 
     std::string mQueryString;
     std::string mErrorMessage;

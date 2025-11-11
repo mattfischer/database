@@ -47,10 +47,13 @@ int main(int argc, char *argv[])
 {
     Database database;
 
-    database.executeQuery("CREATE TABLE Table (STRING name, INTEGER value, INTEGER value2)");
+    auto query = [&](const std::string &queryString) {
+        Database::QueryResult result = database.executeQuery(queryString);
+        std::cout << result.message << std::endl;
+    };
 
-    std::vector<unsigned int> keys = {1, 2};
-    database.addIndex("Table.1", "Table", std::move(keys));
+    query("CREATE TABLE Table (STRING name, INTEGER value, INTEGER value2)");
+    query("CREATE INDEX Table1 ON Table (value, value2)");
 
     Table &table = database.table("Table");
     srand(12345);
@@ -75,7 +78,7 @@ int main(int argc, char *argv[])
     std::cout << "-----------" << std::endl;
     std::cout << std::endl;
 
-    Index &index = database.index("Table.1");
+    Index &index = database.index("Table1");
     Record::Writer startWriter(index.keySchema());
     startWriter.setField(0, Value(3));
     RowIterators::IndexIterator::Limit startLimit = { BTree::SearchComparison::Equal, BTree::SearchPosition::First, startWriter, 1 };
