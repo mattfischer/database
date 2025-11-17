@@ -27,10 +27,12 @@ Database::QueryResult Database::executeQuery(const std::string &queryString)
             return createTable(std::get<Query::CreateTable>(query->query));
         case Query::Type::CreateIndex:
             return createIndex(std::get<Query::CreateIndex>(query->query));
-        case Query::Type::InsertInto:
-            return insertInto(std::get<Query::InsertInto>(query->query));
+        case Query::Type::Insert:
+            return insert(std::get<Query::Insert>(query->query));
         case Query::Type::Select:
             return select(std::get<Query::Select>(query->query));
+        case Query::Type::Delete:
+            return delete_(std::get<Query::Delete>(query->query));
         default:
             return {};
     }
@@ -83,36 +85,36 @@ Database::QueryResult Database::createIndex(Query::CreateIndex &createIndex)
     return {"Created index " + createIndex.indexName};
 }
 
-Database::QueryResult Database::insertInto(Query::InsertInto &insertInto)
+Database::QueryResult Database::insert(Query::Insert &insert)
 {
-    auto it = mTables.find(insertInto.tableName);
+    auto it = mTables.find(insert.tableName);
     if(it == mTables.end()) {
         std::stringstream ss;
-        ss << "Error: Table " << insertInto.tableName << " does not exist";
+        ss << "Error: Table " << insert.tableName << " does not exist";
         return {ss.str()};
     }
     Table &table = *it->second;
 
-    if(insertInto.values.size() != table.schema().fields.size()) {
+    if(insert.values.size() != table.schema().fields.size()) {
         std::stringstream ss;
-        ss << "Error: Incorrect number of values for table " << insertInto.tableName;
+        ss << "Error: Incorrect number of values for table " << insert.tableName;
         return {ss.str()};
     }
 
     Record::Writer writer(table.schema());
-    for(int i=0; i<insertInto.values.size(); i++) {
-        if(insertInto.values[i].type() != table.schema().fields[i].type) {
+    for(int i=0; i<insert.values.size(); i++) {
+        if(insert.values[i].type() != table.schema().fields[i].type) {
             std::stringstream ss;
-            ss << "Error: Incorrect type for column " << table.schema().fields[i].name << " in table " << insertInto.tableName;
+            ss << "Error: Incorrect type for column " << table.schema().fields[i].name << " in table " << insert.tableName;
             return {ss.str()};
         }
 
-        writer.setField(i, insertInto.values[i]);
+        writer.setField(i, insert.values[i]);
     }
 
     table.addRow(writer);
 
-    return {"Added row to table " + insertInto.tableName};
+    return {"Added row to table " + insert.tableName};
 }
 
 class SchemaBindContext : public Expression::BindContext {
@@ -162,6 +164,43 @@ Database::QueryResult Database::select(Query::Select &select)
     }
 
     return {"", std::move(iterator)};
+}
+
+Database::QueryResult Database::delete_(Query::Delete &delete_)
+{
+    auto it = mTables.find(delete_.tableName);
+    if(it == mTables.end()) {
+        std::stringstream ss;
+        ss << "Error: Table " << delete_.tableName << " does not exist";
+        return {ss.str()};
+    }
+    Table &table = *it->second;
+
+    if(delete_.predicate) {
+        SchemaBindContext context(table.schema());
+        try {
+            delete_.predicate->bind(context);
+        } catch(Expression::BindError e) {
+            std::stringstream ss;
+            ss << "Error: No column named " << e.name << "in table " << delete_.tableName;
+            return {ss.str()};
+        }
+    }
+
+    std::unique_ptr<RowIterator> iterator = std::make_unique<RowIterators::TableIterator>(table);
+    if(delete_.predicate) {
+        iterator = std::make_unique<RowIterators::SelectIterator>(std::move(iterator), std::move(delete_.predicate));
+    }
+
+    int rowsRemoved = 0;
+    iterator->start();
+    while(iterator->valid()) {
+        iterator->remove();
+        rowsRemoved++;
+    }
+    std::stringstream ss;
+    ss << rowsRemoved << " rows removed";
+    return {ss.str()};
 }
 
 Table &Database::table(const std::string &name)

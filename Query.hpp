@@ -19,7 +19,7 @@ struct Query {
         std::vector<std::string> columns;
     };
 
-    struct InsertInto {
+    struct Insert {
         std::string tableName;
         std::vector<Value> values;
     };
@@ -29,15 +29,21 @@ struct Query {
         std::unique_ptr<Expression> predicate;
     };
 
+    struct Delete {
+        std::string tableName;
+        std::unique_ptr<Expression> predicate;
+    };
+
     enum class Type {
         CreateTable,
         CreateIndex,
-        InsertInto,
-        Select
+        Insert,
+        Select,
+        Delete
     };
 
     Type type;
-    std::variant<CreateTable, CreateIndex, InsertInto, Select> query;
+    std::variant<CreateTable, CreateIndex, Insert, Select, Delete> query;
 };
 
 #endif

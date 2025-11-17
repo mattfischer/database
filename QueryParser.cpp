@@ -199,10 +199,11 @@ std::unique_ptr<Query> QueryParser::parseQuery()
 
         throwExpected("TABLE | INDEX");
     } else if(matchLiteral("INSERT")) {
-        expectLiteral("INTO");
-        return parseInsertInto();
+        return parseInsert();
     } else if(matchLiteral("SELECT")) {
         return parseSelect();
+    } else if(matchLiteral("DELETE")) {
+        return parseDelete();
     }
 
     throwExpected("<query>");
@@ -256,17 +257,18 @@ std::unique_ptr<Query> QueryParser::parseCreateIndex()
     return query;    
 }
 
-std::unique_ptr<Query> QueryParser::parseInsertInto()
+std::unique_ptr<Query> QueryParser::parseInsert()
 {
-    Query::InsertInto insertInto;
+    Query::Insert insert;
 
-    insertInto.tableName = expectIdentifier();
+    expectLiteral("INTO");
+    insert.tableName = expectIdentifier();
     expectLiteral("VALUES");
 
     expectLiteral("(");
     while(!matchLiteral(")")) {
         Value value = expectValue();
-        insertInto.values.push_back(value);
+        insert.values.push_back(value);
 
         if(matchLiteral(",")) {
             continue;
@@ -274,8 +276,8 @@ std::unique_ptr<Query> QueryParser::parseInsertInto()
     }
 
     auto query = std::make_unique<Query>();
-    query->type = Query::Type::InsertInto;
-    query->query = std::move(insertInto);
+    query->type = Query::Type::Insert;
+    query->query = std::move(insert);
 
     return query;
 }
@@ -298,6 +300,27 @@ std::unique_ptr<Query> QueryParser::parseSelect()
     auto query = std::make_unique<Query>();
     query->type = Query::Type::Select;
     query->query = std::move(select);
+
+    return query;
+}
+
+std::unique_ptr<Query> QueryParser::parseDelete()
+{
+    Query::Delete del;
+
+    while(true) {
+        if(matchLiteral("FROM")) {
+            del.tableName = expectIdentifier();
+        } else if(matchLiteral("WHERE")) {
+            del.predicate = expectExpression();
+        } else {
+            break;
+        }
+    }
+
+    auto query = std::make_unique<Query>();
+    query->type = Query::Type::Delete;
+    query->query = std::move(del);
 
     return query;
 }

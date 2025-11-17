@@ -72,6 +72,9 @@ int main(int argc, char *argv[])
 
     query("SELECT * FROM Table WHERE value == 3");
 
+    query("DELETE FROM Table WHERE value == 2");
+    query("SELECT * FROM Table");
+
     Index &index = database.index("Table1");
     Record::Writer startWriter(index.keySchema());
     startWriter.setField(0, Value(3));

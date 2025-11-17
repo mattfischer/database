@@ -32,8 +32,9 @@ private:
     std::unique_ptr<Query> parseQuery();
     std::unique_ptr<Query> parseCreateTable();
     std::unique_ptr<Query> parseCreateIndex();
-    std::unique_ptr<Query> parseInsertInto();
+    std::unique_ptr<Query> parseInsert();
     std::unique_ptr<Query> parseSelect();
+    std::unique_ptr<Query> parseDelete();
 
     std::unique_ptr<Expression> expectExpression();
     std::unique_ptr<Expression> parseOrExpression();
