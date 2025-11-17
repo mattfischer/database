@@ -50,9 +50,9 @@ namespace RowIterators {
         return result;
     }
 
-    bool SelectIterator::modify(std::vector<ModifyEntry> entries)
+    bool SelectIterator::modify(const std::vector<ModifyEntry> &entries)
     {
-        return mInputIterator->modify(std::move(entries));
+        return mInputIterator->modify(entries);
     }
 
     Value SelectIterator::getField(unsigned int index)

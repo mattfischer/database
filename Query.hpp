@@ -34,16 +34,23 @@ struct Query {
         std::unique_ptr<Expression> predicate;
     };
 
+    struct Update {
+        std::string tableName;
+        std::unique_ptr<Expression> predicate;
+        std::vector<std::tuple<std::string, std::unique_ptr<Expression>>> values;
+    };
+
     enum class Type {
         CreateTable,
         CreateIndex,
         Insert,
         Select,
-        Delete
+        Delete,
+        Update
     };
 
     Type type;
-    std::variant<CreateTable, CreateIndex, Insert, Select, Delete> query;
+    std::variant<CreateTable, CreateIndex, Insert, Select, Delete, Update> query;
 };
 
 #endif

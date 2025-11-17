@@ -33,15 +33,30 @@ namespace RowIterators {
         return true;
     }
 
-    bool TableIterator::modify(std::vector<ModifyEntry> entries)
+    class IteratorEvaluateContext : public Expression::EvaluateContext {
+    public:
+        IteratorEvaluateContext(RowIterator &iterator) : mIterator(iterator) {}
+
+        Value fieldValue(unsigned int field) {
+            return mIterator.getField(field);
+        }
+
+    private:
+        RowIterator &mIterator;
+    };
+
+    bool TableIterator::modify(const std::vector<ModifyEntry> &entries)
     {
         Record::Writer writer(mTable.schema());
         for(int i=0; i<mTable.schema().fields.size(); i++) {
             writer.setField(i, getField(i));
         }
 
-        for(auto &entry : entries) {
-            writer.setField(entry.field, entry.value);
+        IteratorEvaluateContext context(*this);
+
+        for(const auto &entry : entries) {
+            Value value = entry.expression->evaluate(context);
+            writer.setField(entry.field, value);
         }
 
         mTable.modifyRow(mPointer, writer);

@@ -204,6 +204,8 @@ std::unique_ptr<Query> QueryParser::parseQuery()
         return parseSelect();
     } else if(matchLiteral("DELETE")) {
         return parseDelete();
+    } else if(matchLiteral("UPDATE")) {
+        return parseUpdate();
     }
 
     throwExpected("<query>");
@@ -306,13 +308,13 @@ std::unique_ptr<Query> QueryParser::parseSelect()
 
 std::unique_ptr<Query> QueryParser::parseDelete()
 {
-    Query::Delete del;
+    Query::Delete delete_;
 
     while(true) {
         if(matchLiteral("FROM")) {
-            del.tableName = expectIdentifier();
+            delete_.tableName = expectIdentifier();
         } else if(matchLiteral("WHERE")) {
-            del.predicate = expectExpression();
+            delete_.predicate = expectExpression();
         } else {
             break;
         }
@@ -320,7 +322,38 @@ std::unique_ptr<Query> QueryParser::parseDelete()
 
     auto query = std::make_unique<Query>();
     query->type = Query::Type::Delete;
-    query->query = std::move(del);
+    query->query = std::move(delete_);
+
+    return query;
+}
+
+std::unique_ptr<Query> QueryParser::parseUpdate()
+{
+    Query::Update update;
+
+    update.tableName = expectIdentifier();
+
+    while(true) {
+        if(matchLiteral("SET")) {
+            while(true) {
+                std::string column = expectIdentifier();
+                expectLiteral("=");
+                std::unique_ptr<Expression> expression = expectExpression();
+                update.values.push_back(std::make_tuple(std::move(column), std::move(expression)));
+                if(!matchLiteral(",")) {
+                    break;
+                }
+            }
+        } else if(matchLiteral("WHERE")) {
+            update.predicate = expectExpression();
+        } else {
+            break;
+        }
+    }
+
+    auto query = std::make_unique<Query>();
+    query->type = Query::Type::Update;
+    query->query = std::move(update);
 
     return query;
 }

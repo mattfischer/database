@@ -3,6 +3,9 @@
 
 #include "Record.hpp"
 #include "Value.hpp"
+#include "Expression.hpp"
+
+#include <memory>
 
 class RowIterator {
 public:
@@ -17,9 +20,9 @@ public:
 
     struct ModifyEntry {
         unsigned int field;
-        Value value;
+        std::unique_ptr<Expression> expression;
     };
-    virtual bool modify(std::vector<ModifyEntry> entries) = 0;
+    virtual bool modify(const std::vector<ModifyEntry> &entries) = 0;
 
     virtual Value getField(unsigned int index) = 0;
 };

@@ -32,17 +32,6 @@ void printIterator(RowIterator &iterator)
     }
 }
 
-void modifyIterator(RowIterator &iterator)
-{
-    while(iterator.valid()) {
-        std::vector<RowIterator::ModifyEntry> entries;
-        entries.push_back({2, Value(1000)});
-        iterator.modify(std::move(entries));
-
-        iterator.next();
-    }
-}
-
 int main(int argc, char *argv[])
 {
     Database database;
@@ -72,7 +61,7 @@ int main(int argc, char *argv[])
 
     query("SELECT * FROM Table WHERE value == 3");
 
-    query("DELETE FROM Table WHERE value == 2");
+    query("UPDATE Table SET value2 = value2 + 10000 WHERE value == 2");
     query("SELECT * FROM Table");
 
     Index &index = database.index("Table1");

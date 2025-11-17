@@ -62,7 +62,7 @@ namespace RowIterators {
         return false;
     }
 
-    bool SortIterator::modify(std::vector<ModifyEntry> entries)
+    bool SortIterator::modify(const std::vector<ModifyEntry> &entries)
     {
         return false;
     }

@@ -30,6 +30,7 @@ private:
     QueryResult insert(Query::Insert &insert);
     QueryResult select(Query::Select &select);
     QueryResult delete_(Query::Delete &delete_);
+    QueryResult update(Query::Update &update);
 
     PageSet mPageSet;
     std::map<std::string, std::unique_ptr<Table>> mTables;

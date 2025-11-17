@@ -33,6 +33,8 @@ Database::QueryResult Database::executeQuery(const std::string &queryString)
             return select(std::get<Query::Select>(query->query));
         case Query::Type::Delete:
             return delete_(std::get<Query::Delete>(query->query));
+        case Query::Type::Update:
+            return update(std::get<Query::Update>(query->query));
         default:
             return {};
     }
@@ -200,6 +202,66 @@ Database::QueryResult Database::delete_(Query::Delete &delete_)
     }
     std::stringstream ss;
     ss << rowsRemoved << " rows removed";
+    return {ss.str()};
+}
+
+Database::QueryResult Database::update(Query::Update &update)
+{
+    auto it = mTables.find(update.tableName);
+    if(it == mTables.end()) {
+        std::stringstream ss;
+        ss << "Error: Table " << update.tableName << " does not exist";
+        return {ss.str()};
+    }
+    Table &table = *it->second;
+
+    if(update.predicate) {
+        SchemaBindContext context(table.schema());
+        try {
+            update.predicate->bind(context);
+        } catch(Expression::BindError e) {
+            std::stringstream ss;
+            ss << "Error: No column named " << e.name << "in table " << update.tableName;
+            return {ss.str()};
+        }
+    }
+
+    SchemaBindContext context(table.schema());
+    std::vector<RowIterator::ModifyEntry> entries;
+    for(auto &[name, expression] : update.values) {
+        auto it = std::ranges::find_if(table.schema().fields, [&](const auto &a) { return a.name == name; });
+        if(it == table.schema().fields.end()) {
+            std::stringstream ss;
+            ss << "Error: No column named " << name << "in table " << update.tableName;
+            return {ss.str()};
+        } else {
+            try {
+                expression->bind(context);
+            } catch(Expression::BindError e) {
+                std::stringstream ss;
+                ss << "Error: No column named " << e.name << "in table " << update.tableName;
+                return {ss.str()};
+            }
+
+            RowIterator::ModifyEntry entry = {(int)(it - table.schema().fields.begin()), std::move(expression)};
+            entries.push_back(std::move(entry));
+        }
+    }
+
+    std::unique_ptr<RowIterator> iterator = std::make_unique<RowIterators::TableIterator>(table);
+    if(update.predicate) {
+        iterator = std::make_unique<RowIterators::SelectIterator>(std::move(iterator), std::move(update.predicate));
+    }
+
+    int rowsUpdated = 0;
+    iterator->start();
+    while(iterator->valid()) {
+        iterator->modify(entries);
+        iterator->next();
+        rowsUpdated++;
+    }
+    std::stringstream ss;
+    ss << rowsUpdated << " rows updated";
     return {ss.str()};
 }
 

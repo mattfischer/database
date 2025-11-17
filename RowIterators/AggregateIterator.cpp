@@ -63,7 +63,7 @@ namespace RowIterators {
         return false;
     }
 
-    bool AggregateIterator::modify(std::vector<ModifyEntry> entries)
+    bool AggregateIterator::modify(const std::vector<ModifyEntry> &entries)
     {
         return false;
     }

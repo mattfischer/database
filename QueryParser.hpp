@@ -35,6 +35,7 @@ private:
     std::unique_ptr<Query> parseInsert();
     std::unique_ptr<Query> parseSelect();
     std::unique_ptr<Query> parseDelete();
+    std::unique_ptr<Query> parseUpdate();
 
     std::unique_ptr<Expression> expectExpression();
     std::unique_ptr<Expression> parseOrExpression();

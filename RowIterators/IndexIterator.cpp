@@ -66,7 +66,7 @@ namespace RowIterators {
         return true;
     }
 
-    bool IndexIterator::modify(std::vector<ModifyEntry> entries)
+    bool IndexIterator::modify(const std::vector<ModifyEntry> &entries)
     {
         return false;
     }

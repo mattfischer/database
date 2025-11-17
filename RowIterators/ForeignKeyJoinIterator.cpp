@@ -44,7 +44,7 @@ namespace RowIterators {
         return false;
     }
 
-    bool ForeignKeyJoinIterator::modify(std::vector<ModifyEntry> entries)
+    bool ForeignKeyJoinIterator::modify(const std::vector<ModifyEntry> &entries)
     {
         return false;
     }

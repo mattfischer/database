@@ -35,7 +35,7 @@ namespace RowIterators {
         return mInputIterator->remove();
     }
 
-    bool ProjectIterator::modify(std::vector<ModifyEntry> entries)
+    bool ProjectIterator::modify(const std::vector<ModifyEntry> &entries)
     {
         return false;
     }

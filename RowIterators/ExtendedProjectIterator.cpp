@@ -47,7 +47,7 @@ namespace RowIterators {
         return result;
     }
 
-    bool ExtendedProjectIterator::modify(std::vector<ModifyEntry> entries)
+    bool ExtendedProjectIterator::modify(const std::vector<ModifyEntry> &entries)
     {
         return false;
     }
