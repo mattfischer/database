@@ -12,9 +12,9 @@ namespace RowIterators {
         return mInputIterator->schema();
     }
 
-    class IteratorContext : public Expression::Context {
+    class IteratorEvaluateContext : public Expression::EvaluateContext {
     public:
-        IteratorContext(RowIterator &iterator) : mIterator(iterator) {}
+        IteratorEvaluateContext(RowIterator &iterator) : mIterator(iterator) {}
 
         Value fieldValue(unsigned int field) {
             return mIterator.getField(field);
@@ -62,7 +62,7 @@ namespace RowIterators {
 
     void SelectIterator::updateIterator()
     {
-        IteratorContext context(*mInputIterator);
+        IteratorEvaluateContext context(*mInputIterator);
 
         while(mInputIterator->valid()) {
             Value predicateValue = mPredicate->evaluate(context);

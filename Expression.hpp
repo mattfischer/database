@@ -4,17 +4,30 @@
 #include "Value.hpp"
 
 #include <memory>
+#include <string>
 
 class Expression {
 public:
     virtual ~Expression() = default;
 
-    class Context {
+    class EvaluateContext {
     public:
-        virtual ~Context() = default;
+        virtual ~EvaluateContext() = default;
         virtual Value fieldValue(unsigned int field) = 0;
     };
-    virtual Value evaluate(Context &context) = 0;
+    virtual Value evaluate(EvaluateContext &context) = 0;
+
+    class BindContext {
+    public:
+        virtual ~BindContext() = default;
+        virtual int field(const std::string &name) = 0;
+    };
+
+    struct BindError {
+        std::string name;
+    };
+
+    virtual void bind(BindContext &context) = 0;
 };
 
 class CompareExpression : public Expression {
@@ -29,7 +42,8 @@ public:
     };
 
     CompareExpression(CompareType compareType, std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand);
-    Value evaluate(Context &context) override;
+    Value evaluate(EvaluateContext &context) override;
+    void bind(BindContext &context) override;
 
 private:
     CompareType mCompareType;
@@ -46,7 +60,8 @@ public:
     };
 
     LogicalExpression(LogicalType logicalType, std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand);
-    Value evaluate(Context &context) override;
+    Value evaluate(EvaluateContext &context) override;
+    void bind(BindContext &context) override;
 
 private:
     LogicalType mLogicalType;
@@ -60,11 +75,13 @@ public:
         Add,
         Subtract,
         Multiply,
-        Divide
+        Divide,
+        Negate
     };
 
     ArithmeticExpression(ArithmeticType arithmeticType, std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand);
-    Value evaluate(Context &context) override;
+    Value evaluate(EvaluateContext &context) override;
+    void bind(BindContext &context) override;
 
 private:
     ArithmeticType mArithmeticType;
@@ -75,7 +92,8 @@ private:
 class ConstantExpression : public Expression {
 public:
     ConstantExpression(Value value);
-    Value evaluate(Context &context) override;
+    Value evaluate(EvaluateContext &context) override;
+    void bind(BindContext &context) override;
 
 private:
     Value mValue;
@@ -83,11 +101,15 @@ private:
 
 class FieldExpression : public Expression {
 public:
-    FieldExpression(unsigned int field);
-    Value evaluate(Context &context) override;
+    FieldExpression(int field);
+    FieldExpression(const std::string &name);
+
+    Value evaluate(EvaluateContext &context) override;
+    void bind(BindContext &context) override;
 
 private:
-    unsigned int mField;
+    int mField;
+    std::string mName;
 };
 
 #endif

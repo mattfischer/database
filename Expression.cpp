@@ -7,7 +7,7 @@ CompareExpression::CompareExpression(CompareType compareType, std::unique_ptr<Ex
 {
 }
 
-Value CompareExpression::evaluate(Context &context)
+Value CompareExpression::evaluate(EvaluateContext &context)
 {
     Value leftValue = mLeftOperand->evaluate(context);
     Value rightValue = mRightOperand->evaluate(context);
@@ -28,6 +28,12 @@ Value CompareExpression::evaluate(Context &context)
     }
 }
 
+void CompareExpression::bind(BindContext &context)
+{
+    mLeftOperand->bind(context);
+    mRightOperand->bind(context);
+}
+
 LogicalExpression::LogicalExpression(LogicalType logicalType, std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand)
 : mLogicalType(logicalType)
 , mLeftOperand(std::move(leftOperand))
@@ -35,10 +41,10 @@ LogicalExpression::LogicalExpression(LogicalType logicalType, std::unique_ptr<Ex
 {
 }
 
-Value LogicalExpression::evaluate(Context &context)
+Value LogicalExpression::evaluate(EvaluateContext &context)
 {
     Value leftValue = mLeftOperand->evaluate(context);
-    Value rightValue = mRightOperand->evaluate(context);
+    Value rightValue = (mLogicalType != Not) ? mRightOperand->evaluate(context) : Value();
 
     switch(mLogicalType) {
         case LogicalType::And:
@@ -50,6 +56,12 @@ Value LogicalExpression::evaluate(Context &context)
     }
 }
 
+void LogicalExpression::bind(BindContext &context)
+{
+    mLeftOperand->bind(context);
+    if(mRightOperand) mRightOperand->bind(context);
+}
+
 ArithmeticExpression::ArithmeticExpression(ArithmeticType arithmeticType, std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand)
 : mArithmeticType(arithmeticType)
 , mLeftOperand(std::move(leftOperand))
@@ -57,10 +69,10 @@ ArithmeticExpression::ArithmeticExpression(ArithmeticType arithmeticType, std::u
 {
 }
 
-Value ArithmeticExpression::evaluate(Context &context)
+Value ArithmeticExpression::evaluate(EvaluateContext &context)
 {
     Value leftValue = mLeftOperand->evaluate(context);
-    Value rightValue = mRightOperand->evaluate(context);
+    Value rightValue = (mArithmeticType != Negate) ? mRightOperand->evaluate(context) : Value();
 
     switch(mArithmeticType) {
         case ArithmeticType::Add:
@@ -71,7 +83,15 @@ Value ArithmeticExpression::evaluate(Context &context)
             return leftValue * rightValue;
         case ArithmeticType::Divide:
             return leftValue / rightValue;
+        case ArithmeticType::Negate:
+            return -leftValue;
     }
+}
+
+void ArithmeticExpression::bind(BindContext &context)
+{
+    mLeftOperand->bind(context);
+    if(mRightOperand) mRightOperand->bind(context);
 }
 
 ConstantExpression::ConstantExpression(Value value)
@@ -79,17 +99,35 @@ ConstantExpression::ConstantExpression(Value value)
 {
 }
 
-Value ConstantExpression::evaluate(Context &)
+Value ConstantExpression::evaluate(EvaluateContext &)
 {
     return mValue;
 }
 
-FieldExpression::FieldExpression(unsigned int field)
+void ConstantExpression::bind(BindContext &context)
+{
+}
+
+FieldExpression::FieldExpression(int field)
 : mField(field)
 {
 }
 
-Value FieldExpression::evaluate(Context &context)
+FieldExpression::FieldExpression(const std::string &name)
+: mName(name)
+{
+    mField = -1;
+}
+
+Value FieldExpression::evaluate(EvaluateContext &context)
 {
     return context.fieldValue(mField);
+}
+
+void FieldExpression::bind(BindContext &context)
+{
+    mField = context.field(mName);
+    if(mField == -1) {
+        throw BindError {mName};
+    }
 }

@@ -2,6 +2,9 @@
 
 #include "QueryParser.hpp"
 
+#include "RowIterators/TableIterator.hpp"
+#include "RowIterators/SelectIterator.hpp"
+
 #include <sstream>
 #include <ranges>
 
@@ -26,6 +29,8 @@ Database::QueryResult Database::executeQuery(const std::string &queryString)
             return createIndex(std::get<Query::CreateIndex>(query->query));
         case Query::Type::InsertInto:
             return insertInto(std::get<Query::InsertInto>(query->query));
+        case Query::Type::Select:
+            return select(std::get<Query::Select>(query->query));
         default:
             return {};
     }
@@ -108,6 +113,55 @@ Database::QueryResult Database::insertInto(Query::InsertInto &insertInto)
     table.addRow(writer);
 
     return {"Added row to table " + insertInto.tableName};
+}
+
+class SchemaBindContext : public Expression::BindContext {
+public:
+    SchemaBindContext(Record::Schema &schema)
+    : mSchema(schema)
+    {
+    }
+
+    int field(const std::string &name) {
+        auto it = std::ranges::find_if(mSchema.fields, [&](const auto &a) { return a.name == name; });
+        if(it == mSchema.fields.end()) {
+            return -1;
+        } else {
+            return it - mSchema.fields.begin();
+        }
+    }
+
+private:
+    Record::Schema mSchema;
+};
+
+Database::QueryResult Database::select(Query::Select &select)
+{
+    auto it = mTables.find(select.tableName);
+    if(it == mTables.end()) {
+        std::stringstream ss;
+        ss << "Error: Table " << select.tableName << " does not exist";
+        return {ss.str()};
+    }
+    Table &table = *it->second;
+
+    if(select.predicate) {
+        SchemaBindContext context(table.schema());
+        try {
+            select.predicate->bind(context);
+        } catch(Expression::BindError e) {
+            std::stringstream ss;
+            ss << "Error: No column named " << e.name << "in table " << select.tableName;
+            return {ss.str()};
+        }
+    }
+
+    std::unique_ptr<RowIterator> iterator = std::make_unique<RowIterators::TableIterator>(table);
+    if(select.predicate) {
+        iterator = std::make_unique<RowIterators::SelectIterator>(std::move(iterator), std::move(select.predicate));
+    }
+
+    return {"", std::move(iterator)};
 }
 
 Table &Database::table(const std::string &name)

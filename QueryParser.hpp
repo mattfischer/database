@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <string>
+#include <optional>
 
 class QueryParser {
 public:
@@ -22,14 +23,26 @@ private:
     bool matchLiteral(const std::string &literal);
     void expectLiteral(const std::string &literal);
 
+    std::optional<std::string> matchIdentifier();
     std::string expectIdentifier();
     Value::Type expectType();
+    std::optional<Value> matchValue();
     Value expectValue();
 
     std::unique_ptr<Query> parseQuery();
     std::unique_ptr<Query> parseCreateTable();
     std::unique_ptr<Query> parseCreateIndex();
     std::unique_ptr<Query> parseInsertInto();
+    std::unique_ptr<Query> parseSelect();
+
+    std::unique_ptr<Expression> expectExpression();
+    std::unique_ptr<Expression> parseOrExpression();
+    std::unique_ptr<Expression> parseAndExpression();
+    std::unique_ptr<Expression> parseCompareExpression();
+    std::unique_ptr<Expression> parseAddSubExpression();
+    std::unique_ptr<Expression> parseMulDivExpression();
+    std::unique_ptr<Expression> parseUnaryExpression();
+    std::unique_ptr<Expression> parseBaseExpression();
 
     std::string mQueryString;
     std::string mErrorMessage;

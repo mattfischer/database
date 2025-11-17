@@ -2,6 +2,7 @@
 #define QUERY_HPP
 
 #include "Record.hpp"
+#include "Expression.hpp"
 
 #include <string>
 #include <variant>
@@ -23,14 +24,20 @@ struct Query {
         std::vector<Value> values;
     };
 
+    struct Select {
+        std::string tableName;
+        std::unique_ptr<Expression> predicate;
+    };
+
     enum class Type {
         CreateTable,
         CreateIndex,
         InsertInto,
+        Select
     };
 
     Type type;
-    std::variant<CreateTable, CreateIndex, InsertInto> query;
+    std::variant<CreateTable, CreateIndex, InsertInto, Select> query;
 };
 
 #endif

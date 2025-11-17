@@ -79,7 +79,7 @@ void QueryParser::expectLiteral(const std::string &literal)
     }
 }
 
-std::string QueryParser::expectIdentifier()
+std::optional<std::string> QueryParser::matchIdentifier()
 {
     int pos = mPos;
     while(pos < mQueryString.size()) {
@@ -93,13 +93,23 @@ std::string QueryParser::expectIdentifier()
 
     std::string result = mQueryString.substr(mPos, pos - mPos);
     if(result.size() == 0) {
-        throwExpected("<identifier>");
+        return std::nullopt;
     }
 
     mPos = pos;
     skipWhitespace();
 
     return result;
+}
+
+std::string QueryParser::expectIdentifier()
+{
+    auto id = matchIdentifier();
+    if(id) {
+        return *id;
+    } else {
+        throwExpected("<identifier>");
+    }
 }
 
 Value::Type QueryParser::expectType()
@@ -121,7 +131,7 @@ Value::Type QueryParser::expectType()
     return result;
 }
 
-Value QueryParser::expectValue()
+std::optional<Value> QueryParser::matchValue()
 {
     if(mQueryString[mPos] == '\"') {
         int pos = mPos + 1;
@@ -164,6 +174,16 @@ Value QueryParser::expectValue()
     } else if(matchLiteral("false")) {
         return Value(false);
     } else {
+        return std::nullopt;
+    }
+}
+
+Value QueryParser::expectValue()
+{
+    auto val = matchValue();
+    if(val) {
+        return *val;
+    } else {
         throwExpected("<value>");
     }
 }
@@ -181,6 +201,8 @@ std::unique_ptr<Query> QueryParser::parseQuery()
     } else if(matchLiteral("INSERT")) {
         expectLiteral("INTO");
         return parseInsertInto();
+    } else if(matchLiteral("SELECT")) {
+        return parseSelect();
     }
 
     throwExpected("<query>");
@@ -256,4 +278,143 @@ std::unique_ptr<Query> QueryParser::parseInsertInto()
     query->query = std::move(insertInto);
 
     return query;
+}
+
+std::unique_ptr<Query> QueryParser::parseSelect()
+{
+    Query::Select select;
+
+    expectLiteral("*");
+    while(true) {
+        if(matchLiteral("FROM")) {
+            select.tableName = expectIdentifier();
+        } else if(matchLiteral("WHERE")) {
+            select.predicate = expectExpression();
+        } else {
+            break;
+        }
+    }
+
+    auto query = std::make_unique<Query>();
+    query->type = Query::Type::Select;
+    query->query = std::move(select);
+
+    return query;
+}
+
+std::unique_ptr<Expression> QueryParser::expectExpression()
+{
+    return parseAndExpression();
+}
+
+std::unique_ptr<Expression> QueryParser::parseOrExpression()
+{
+    std::unique_ptr<Expression> result = parseAndExpression();
+    while(matchLiteral("||")) {
+        auto rhs = parseAndExpression();
+        result = std::make_unique<LogicalExpression>(LogicalExpression::Or, std::move(result), std::move(rhs));
+    }
+
+    return result;
+}
+
+std::unique_ptr<Expression> QueryParser::parseAndExpression()
+{
+    std::unique_ptr<Expression> result = parseCompareExpression();
+    while(matchLiteral("&&")) {
+        auto rhs = parseCompareExpression();
+        result = std::make_unique<LogicalExpression>(LogicalExpression::And, std::move(result), std::move(rhs));
+    }
+
+    return result;
+}
+
+std::unique_ptr<Expression> QueryParser::parseCompareExpression()
+{
+    std::unique_ptr<Expression> result = parseAddSubExpression();
+    if(matchLiteral("<=")) {
+        auto rhs = parseAddSubExpression();
+        result = std::make_unique<CompareExpression>(CompareExpression::LessThanEqual, std::move(result), std::move(rhs));
+    } else if(matchLiteral("<")) {
+        auto rhs = parseAddSubExpression();
+        result = std::make_unique<CompareExpression>(CompareExpression::LessThan, std::move(result), std::move(rhs));
+    } else if(matchLiteral("==")) {
+        auto rhs = parseAddSubExpression();
+        result = std::make_unique<CompareExpression>(CompareExpression::Equal, std::move(result), std::move(rhs));
+    } else if(matchLiteral("!=")) {
+        auto rhs = parseAddSubExpression();
+        result = std::make_unique<CompareExpression>(CompareExpression::NotEqual, std::move(result), std::move(rhs));
+    } else if(matchLiteral(">=")) {
+        auto rhs = parseAddSubExpression();
+        result = std::make_unique<CompareExpression>(CompareExpression::GreaterThanEqual, std::move(result), std::move(rhs));
+    } else if(matchLiteral(">")) {
+        auto rhs = parseAddSubExpression();
+        result = std::make_unique<CompareExpression>(CompareExpression::GreaterThan, std::move(result), std::move(rhs));
+    }
+
+    return result;
+}
+
+std::unique_ptr<Expression> QueryParser::parseAddSubExpression()
+{
+    std::unique_ptr<Expression> result = parseMulDivExpression();
+    while(true) {
+        if(matchLiteral("+")) {
+            auto rhs = parseMulDivExpression();
+            result = std::make_unique<ArithmeticExpression>(ArithmeticExpression::Add, std::move(result), std::move(rhs));
+        } else if(matchLiteral("-")) {
+            auto rhs = parseMulDivExpression();
+            result = std::make_unique<ArithmeticExpression>(ArithmeticExpression::Subtract, std::move(result), std::move(rhs));
+        } else {
+            break;
+        }
+    }
+
+    return result;
+}
+
+std::unique_ptr<Expression> QueryParser::parseMulDivExpression()
+{
+    std::unique_ptr<Expression> result = parseUnaryExpression();
+    while(true) {
+        if(matchLiteral("*")) {
+            auto rhs = parseUnaryExpression();
+            result = std::make_unique<ArithmeticExpression>(ArithmeticExpression::Multiply, std::move(result), std::move(rhs));
+        } else if(matchLiteral("/")) {
+            auto rhs = parseUnaryExpression();
+            result = std::make_unique<ArithmeticExpression>(ArithmeticExpression::Divide, std::move(result), std::move(rhs));
+        } else {
+            break;
+        }
+    }
+
+    return result;
+}
+
+std::unique_ptr<Expression> QueryParser::parseUnaryExpression()
+{
+    if(matchLiteral("!")) {
+        auto arg = parseUnaryExpression();
+        return std::make_unique<LogicalExpression>(LogicalExpression::Not, std::move(arg), nullptr);
+    } else if(matchLiteral("-")) {
+        auto arg = parseUnaryExpression();
+        return std::make_unique<ArithmeticExpression>(ArithmeticExpression::Negate, std::move(arg), nullptr);
+    } else {
+        return parseBaseExpression();
+    }
+}
+
+std::unique_ptr<Expression> QueryParser::parseBaseExpression()
+{
+    if(matchLiteral("(")) {
+        auto exp = expectExpression();
+        expectLiteral(")");
+        return exp;
+    } else if(auto value = matchValue()) {
+        return std::make_unique<ConstantExpression>(*value);
+    } else if(auto id = matchIdentifier()) {
+        return std::make_unique<FieldExpression>(*id);
+    } else {
+        throwExpected("<expression>");
+    }
 }

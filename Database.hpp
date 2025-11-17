@@ -5,6 +5,7 @@
 #include "Table.hpp"
 #include "Index.hpp"
 #include "Query.hpp"
+#include "RowIterator.hpp"
 
 #include <map>
 #include <memory>
@@ -13,6 +14,7 @@ class Database {
 public:
     struct QueryResult {
         std::string message;
+        std::unique_ptr<RowIterator> iterator;
     };
 
     PageSet &pageSet();
@@ -26,6 +28,7 @@ private:
     QueryResult createTable(Query::CreateTable &createTable);
     QueryResult createIndex(Query::CreateIndex &createIndex);
     QueryResult insertInto(Query::InsertInto &insertInto);
+    QueryResult select(Query::Select &select);
 
     PageSet mPageSet;
     std::map<std::string, std::unique_ptr<Table>> mTables;

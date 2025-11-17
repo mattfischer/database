@@ -49,7 +49,13 @@ int main(int argc, char *argv[])
 
     auto query = [&](const std::string &queryString) {
         Database::QueryResult result = database.executeQuery(queryString);
-        std::cout << result.message << std::endl;
+        if(!result.message.empty()) {
+            std::cout << result.message << std::endl;
+        }
+        if(result.iterator) {
+            result.iterator->start();
+            printIterator(*result.iterator);
+        }
     };
 
     query("CREATE TABLE Table (STRING name, INTEGER value, INTEGER value2)");
@@ -64,14 +70,7 @@ int main(int argc, char *argv[])
         query(ss.str());
     }
 
-    database.table("Table").print();
-
-    RowIterators::TableIterator tableIterator(database.table("Table"));
-    tableIterator.start();
-    printIterator(tableIterator);
-    std::cout << std::endl;
-    std::cout << "-----------" << std::endl;
-    std::cout << std::endl;
+    query("SELECT * FROM Table WHERE value == 3");
 
     Index &index = database.index("Table1");
     Record::Writer startWriter(index.keySchema());

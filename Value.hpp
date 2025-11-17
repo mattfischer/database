@@ -42,6 +42,7 @@ public:
 
     Value operator+(Value &other);
     Value operator-(Value &other);
+    Value operator-();
     Value operator*(Value &other);
     Value operator/(Value &other);
 

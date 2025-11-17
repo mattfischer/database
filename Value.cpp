@@ -175,6 +175,17 @@ Value Value::operator-(Value &other)
     return Value();
 }
 
+Value Value::operator-()
+{
+    switch(type()) {
+        case Type::Int:
+            return Value(-intValue());
+        case Type::Float:
+            return Value(-floatValue());
+    }
+    return Value();
+}
+
 Value Value::operator*(Value &other)
 {
     switch(type()) {
