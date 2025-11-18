@@ -4,6 +4,7 @@
 
 #include "RowIterators/TableIterator.hpp"
 #include "RowIterators/SelectIterator.hpp"
+#include "RowIterators/SortIterator.hpp"
 
 #include <sstream>
 #include <ranges>
@@ -161,8 +162,21 @@ Database::QueryResult Database::select(ParsedQuery::Select &select)
     }
 
     std::unique_ptr<RowIterator> iterator = std::make_unique<RowIterators::TableIterator>(table);
+
     if(select.predicate) {
         iterator = std::make_unique<RowIterators::SelectIterator>(std::move(iterator), std::move(select.predicate));
+    }
+
+    if(!select.sortField.empty()) {
+        auto it = std::ranges::find_if(table.schema().fields, [&](const auto &a) { return a.name == select.sortField; });
+        if(it == table.schema().fields.end()) {
+            std::stringstream ss;
+            ss << "Error: No column named " << select.sortField << "in table " << select.tableName;
+            return {ss.str()};
+        }
+
+        int field = it - table.schema().fields.begin();
+        iterator = std::make_unique<RowIterators::SortIterator>(std::move(iterator), field);
     }
 
     return {"", std::move(iterator)};

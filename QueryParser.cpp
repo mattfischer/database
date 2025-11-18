@@ -294,6 +294,9 @@ std::unique_ptr<ParsedQuery> QueryParser::parseSelect()
             select.tableName = expectIdentifier();
         } else if(matchLiteral("WHERE")) {
             select.predicate = expectExpression();
+        } else if(matchLiteral("ORDER")) {
+            expectLiteral("BY");
+            select.sortField = expectIdentifier();
         } else {
             break;
         }

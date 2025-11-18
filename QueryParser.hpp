@@ -30,6 +30,7 @@ struct ParsedQuery {
     struct Select {
         std::string tableName;
         std::unique_ptr<Expression> predicate;
+        std::string sortField;
     };
 
     struct Delete {

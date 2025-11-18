@@ -101,23 +101,7 @@ int main(int argc, char *argv[])
         query(ss.str());
     }
 
-    query("SELECT * FROM Table WHERE value == 3");
-
-    query("UPDATE Table SET value2 = value2 + 10000 WHERE value == 2");
-    query("SELECT * FROM Table");
-
-    Index &index = database.index("Table1");
-    Record::Writer startWriter(index.keySchema());
-    startWriter.setField(0, Value(3));
-    RowIterators::IndexIterator::Limit startLimit = { BTree::SearchComparison::Equal, BTree::SearchPosition::First, startWriter, 1 };
-    
-    Record::Writer endWriter(index.keySchema());
-    endWriter.setField(0, Value(4));
-    RowIterators::IndexIterator::Limit endLimit = { BTree::SearchComparison::Equal, BTree::SearchPosition::Last, endWriter, 1 };
-    
-    RowIterators::IndexIterator indexIterator(index, startLimit, endLimit);
-    indexIterator.start();
-    printIterator(indexIterator);
+    query("SELECT * FROM Table WHERE value == 3 ORDER BY value2");
 
     return 0;
 }
