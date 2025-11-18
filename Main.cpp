@@ -16,20 +16,61 @@
 
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 
 void printIterator(RowIterator &iterator)
 {
+    std::vector<int> widths;
+
+    std::cout << "+";
+    for(int i = 0; i < iterator.schema().fields.size() + 1; i++) {
+        int width = (i == 0) ? 4 : std::max((int)iterator.schema().fields[i - 1].name.size(), Value::minPrintWidth(iterator.schema().fields[i - 1].type)); 
+        widths.push_back(width);
+        for(int j = 0; j < width + 2; j++) std::cout << "-";
+        std::cout << "+";
+    }
+    std::cout << std::endl;
+
+    std::cout << "|";
+    for(int i = 0; i < iterator.schema().fields.size() + 1; i++) {
+        std::cout << " ";
+        std::cout.width(widths[i]);
+        std::cout << ((i == 0) ? "#" : iterator.schema().fields[i - 1].name);
+        std::cout << " |";
+    }
+    std::cout << std::endl;
+
+    std::cout << "+";
+    for(int i = 0; i < iterator.schema().fields.size() + 1; i++) {
+        for(int j = 0; j < widths[i] + 2; j++) std::cout << "-";
+        std::cout << "+";
+    }
+    std::cout << std::endl;
+
     for(int i = 0; iterator.valid(); i++) {
-        std::cout << i << ": ";
-        for(int j=0; j<iterator.schema().fields.size(); j++) {
-            Value value = iterator.getField(j);
-            value.print();
+        std::cout << "|";
+        for(int j = 0; j < iterator.schema().fields.size() + 1; j++) {
             std::cout << " ";
+            if(j == 0) {
+                std::cout.width(widths[j]);
+                std::cout << i;
+            } else {
+                Value value = iterator.getField(j - 1);
+                value.print(widths[j]);
+            }
+            std::cout << " |";
         }
         std::cout << std::endl;
 
         iterator.next();
     }
+
+    std::cout << "+";
+    for(int i = 0; i < iterator.schema().fields.size() + 1; i++) {
+        for(int j = 0; j < widths[i] + 2; j++) std::cout << "-";
+        std::cout << "+";
+    }
+    std::cout << std::endl;
 }
 
 int main(int argc, char *argv[])
@@ -44,6 +85,7 @@ int main(int argc, char *argv[])
         if(result.iterator) {
             result.iterator->start();
             printIterator(*result.iterator);
+            std::cout << std::endl;
         }
     };
 

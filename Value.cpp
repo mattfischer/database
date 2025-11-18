@@ -1,6 +1,7 @@
 #include "Value.hpp"
 
 #include <iostream>
+#include <sstream>
 
 Value::Value(int value)
 {
@@ -75,8 +76,12 @@ bool Value::booleanValue()
     return std::get<bool>(mValue);
 }
 
-void Value::print()
+void Value::print(int width)
 {
+    if(width != -1) {
+        std::cout.width(width);
+    }
+
     switch(type()) {
         case Value::Type::Int:
             std::cout << intValue();
@@ -87,12 +92,35 @@ void Value::print()
             break;
 
         case Value::Type::String:
-            std::cout << "\"" << stringValue() << "\"";  
+        {
+            std::stringstream ss;
+
+            if(width == -1 || stringValue().size() < width) {
+                ss << "\"" << stringValue() << "\"";
+            } else {
+                ss << "\"" << stringValue().substr(0, width - 3) << "...\"";
+            }
+
+            std::cout << ss.str();
             break;
+        }
 
         case Value::Type::Boolean:
             std::cout << (booleanValue() ? "true" : "false");
             break;
+    }
+}
+
+int Value::minPrintWidth(Type type)
+{
+    switch(type) {
+        case Value::Type::Int:
+        case Value::Type::Float:
+        case Value::Type::Boolean:
+            return 6;
+
+        case Value::Type::String:
+            return 20;
     }
 }
 

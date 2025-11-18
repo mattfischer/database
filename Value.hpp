@@ -31,7 +31,8 @@ public:
     const std::string &stringValue();
     bool booleanValue();
 
-    void print();
+    void print(int width = -1);
+    static int minPrintWidth(Type type);
 
     bool operator<(Value &other);
     bool operator<=(Value &other);
