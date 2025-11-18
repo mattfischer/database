@@ -14,6 +14,10 @@ PageSet &Database::pageSet()
     return mPageSet;
 }
 
+struct QueryError {
+    std::string message;
+};
+
 Database::QueryResult Database::executeQuery(const std::string &queryString)
 {
     QueryParser parser(queryString);
@@ -23,21 +27,25 @@ Database::QueryResult Database::executeQuery(const std::string &queryString)
         return {parser.errorMessage()};
     }
 
-    switch(query->type) {
-        case ParsedQuery::Type::CreateTable:
-            return createTable(std::get<ParsedQuery::CreateTable>(query->query));
-        case ParsedQuery::Type::CreateIndex:
-            return createIndex(std::get<ParsedQuery::CreateIndex>(query->query));
-        case ParsedQuery::Type::Insert:
-            return insert(std::get<ParsedQuery::Insert>(query->query));
-        case ParsedQuery::Type::Select:
-            return select(std::get<ParsedQuery::Select>(query->query));
-        case ParsedQuery::Type::Delete:
-            return delete_(std::get<ParsedQuery::Delete>(query->query));
-        case ParsedQuery::Type::Update:
-            return update(std::get<ParsedQuery::Update>(query->query));
-        default:
-            return {};
+    try {
+        switch(query->type) {
+            case ParsedQuery::Type::CreateTable:
+                return createTable(std::get<ParsedQuery::CreateTable>(query->query));
+            case ParsedQuery::Type::CreateIndex:
+                return createIndex(std::get<ParsedQuery::CreateIndex>(query->query));
+            case ParsedQuery::Type::Insert:
+                return insert(std::get<ParsedQuery::Insert>(query->query));
+            case ParsedQuery::Type::Select:
+                return select(std::get<ParsedQuery::Select>(query->query));
+            case ParsedQuery::Type::Delete:
+                return delete_(std::get<ParsedQuery::Delete>(query->query));
+            case ParsedQuery::Type::Update:
+                return update(std::get<ParsedQuery::Update>(query->query));
+            default:
+                return {};
+        }
+    } catch(QueryError e) {
+        return {e.message};
     }
 }
 
@@ -53,13 +61,7 @@ Database::QueryResult Database::createTable(ParsedQuery::CreateTable &createTabl
 
 Database::QueryResult Database::createIndex(ParsedQuery::CreateIndex &createIndex)
 {
-    auto it = mTables.find(createIndex.tableName);
-    if(it == mTables.end()) {
-        std::stringstream ss;
-        ss << "Error: Table " << createIndex.tableName << " does not exist";
-        return {ss.str()};
-    }
-    Table &table = *it->second;
+    Table &table = findTable(createIndex.tableName);
 
     if(mIndices.contains(createIndex.indexName)) {
         std::stringstream ss;
@@ -69,14 +71,8 @@ Database::QueryResult Database::createIndex(ParsedQuery::CreateIndex &createInde
 
     std::vector<unsigned int> keys;
     for(auto &column : createIndex.columns) {
-        auto it = std::ranges::find_if(table.schema().fields, [&](const auto &a) { return a.name == column; });
-        if(it == table.schema().fields.end()) {
-            std::stringstream ss;
-            ss << "Error: No column named  " << column << " in table " << createIndex.tableName;
-            return {ss.str()};
-        } else {
-            keys.push_back(it - table.schema().fields.begin());
-        }
+        unsigned int fieldIndex = tableFieldIndex(column, table, createIndex.tableName);
+        keys.push_back(fieldIndex);
     }
 
     Page &rootPage = mPageSet.addPage();
@@ -90,13 +86,7 @@ Database::QueryResult Database::createIndex(ParsedQuery::CreateIndex &createInde
 
 Database::QueryResult Database::insert(ParsedQuery::Insert &insert)
 {
-    auto it = mTables.find(insert.tableName);
-    if(it == mTables.end()) {
-        std::stringstream ss;
-        ss << "Error: Table " << insert.tableName << " does not exist";
-        return {ss.str()};
-    }
-    Table &table = *it->second;
+    Table &table = findTable(insert.tableName);
 
     if(insert.values.size() != table.schema().fields.size()) {
         std::stringstream ss;
@@ -120,62 +110,19 @@ Database::QueryResult Database::insert(ParsedQuery::Insert &insert)
     return {"Added row to table " + insert.tableName};
 }
 
-class SchemaBindContext : public Expression::BindContext {
-public:
-    SchemaBindContext(Record::Schema &schema)
-    : mSchema(schema)
-    {
-    }
-
-    int field(const std::string &name) {
-        auto it = std::ranges::find_if(mSchema.fields, [&](const auto &a) { return a.name == name; });
-        if(it == mSchema.fields.end()) {
-            return -1;
-        } else {
-            return it - mSchema.fields.begin();
-        }
-    }
-
-private:
-    Record::Schema mSchema;
-};
-
 Database::QueryResult Database::select(ParsedQuery::Select &select)
 {
-    auto it = mTables.find(select.tableName);
-    if(it == mTables.end()) {
-        std::stringstream ss;
-        ss << "Error: Table " << select.tableName << " does not exist";
-        return {ss.str()};
-    }
-    Table &table = *it->second;
-
-    if(select.predicate) {
-        SchemaBindContext context(table.schema());
-        try {
-            select.predicate->bind(context);
-        } catch(Expression::BindError e) {
-            std::stringstream ss;
-            ss << "Error: No column named " << e.name << "in table " << select.tableName;
-            return {ss.str()};
-        }
-    }
+    Table &table = findTable(select.tableName);
 
     std::unique_ptr<RowIterator> iterator = std::make_unique<RowIterators::TableIterator>(table);
 
     if(select.predicate) {
+        bindExpression(*select.predicate, table, select.tableName);
         iterator = std::make_unique<RowIterators::SelectIterator>(std::move(iterator), std::move(select.predicate));
     }
 
     if(!select.sortField.empty()) {
-        auto it = std::ranges::find_if(table.schema().fields, [&](const auto &a) { return a.name == select.sortField; });
-        if(it == table.schema().fields.end()) {
-            std::stringstream ss;
-            ss << "Error: No column named " << select.sortField << "in table " << select.tableName;
-            return {ss.str()};
-        }
-
-        int field = it - table.schema().fields.begin();
+        unsigned int field = tableFieldIndex(select.sortField, table, select.tableName);
         iterator = std::make_unique<RowIterators::SortIterator>(std::move(iterator), field);
     }
 
@@ -184,27 +131,12 @@ Database::QueryResult Database::select(ParsedQuery::Select &select)
 
 Database::QueryResult Database::delete_(ParsedQuery::Delete &delete_)
 {
-    auto it = mTables.find(delete_.tableName);
-    if(it == mTables.end()) {
-        std::stringstream ss;
-        ss << "Error: Table " << delete_.tableName << " does not exist";
-        return {ss.str()};
-    }
-    Table &table = *it->second;
-
-    if(delete_.predicate) {
-        SchemaBindContext context(table.schema());
-        try {
-            delete_.predicate->bind(context);
-        } catch(Expression::BindError e) {
-            std::stringstream ss;
-            ss << "Error: No column named " << e.name << "in table " << delete_.tableName;
-            return {ss.str()};
-        }
-    }
+    Table &table = findTable(delete_.tableName);
 
     std::unique_ptr<RowIterator> iterator = std::make_unique<RowIterators::TableIterator>(table);
+
     if(delete_.predicate) {
+        bindExpression(*delete_.predicate, table, delete_.tableName);
         iterator = std::make_unique<RowIterators::SelectIterator>(std::move(iterator), std::move(delete_.predicate));
     }
 
@@ -221,49 +153,20 @@ Database::QueryResult Database::delete_(ParsedQuery::Delete &delete_)
 
 Database::QueryResult Database::update(ParsedQuery::Update &update)
 {
-    auto it = mTables.find(update.tableName);
-    if(it == mTables.end()) {
-        std::stringstream ss;
-        ss << "Error: Table " << update.tableName << " does not exist";
-        return {ss.str()};
-    }
-    Table &table = *it->second;
+    Table &table = findTable(update.tableName);
 
-    if(update.predicate) {
-        SchemaBindContext context(table.schema());
-        try {
-            update.predicate->bind(context);
-        } catch(Expression::BindError e) {
-            std::stringstream ss;
-            ss << "Error: No column named " << e.name << "in table " << update.tableName;
-            return {ss.str()};
-        }
-    }
-
-    SchemaBindContext context(table.schema());
     std::vector<RowIterator::ModifyEntry> entries;
     for(auto &[name, expression] : update.values) {
-        auto it = std::ranges::find_if(table.schema().fields, [&](const auto &a) { return a.name == name; });
-        if(it == table.schema().fields.end()) {
-            std::stringstream ss;
-            ss << "Error: No column named " << name << "in table " << update.tableName;
-            return {ss.str()};
-        } else {
-            try {
-                expression->bind(context);
-            } catch(Expression::BindError e) {
-                std::stringstream ss;
-                ss << "Error: No column named " << e.name << "in table " << update.tableName;
-                return {ss.str()};
-            }
-
-            RowIterator::ModifyEntry entry = {(int)(it - table.schema().fields.begin()), std::move(expression)};
-            entries.push_back(std::move(entry));
-        }
+        unsigned int fieldIndex = tableFieldIndex(name, table, update.tableName);
+        bindExpression(*expression, table, update.tableName);
+        RowIterator::ModifyEntry entry = {fieldIndex, std::move(expression)};
+        entries.push_back(std::move(entry));
     }
 
     std::unique_ptr<RowIterator> iterator = std::make_unique<RowIterators::TableIterator>(table);
+
     if(update.predicate) {
+        bindExpression(*update.predicate, table, update.tableName);
         iterator = std::make_unique<RowIterators::SelectIterator>(std::move(iterator), std::move(update.predicate));
     }
 
@@ -279,12 +182,65 @@ Database::QueryResult Database::update(ParsedQuery::Update &update)
     return {ss.str()};
 }
 
-Table &Database::table(const std::string &name)
+Table &Database::findTable(const std::string &name)
 {
-    return *mTables[name];
+    auto it = mTables.find(name);
+    if(it == mTables.end()) {
+        std::stringstream ss;
+        ss << "Error: Table " << name << " does not exist";
+        throw QueryError {ss.str()};
+    }
+
+    return *it->second;
 }
 
-Index &Database::index(const std::string &name)
+Index &Database::findIndex(const std::string &name)
 {
-    return *mIndices[name];
+    auto it = mIndices.find(name);
+    if(it == mIndices.end()) {
+        std::stringstream ss;
+        ss << "Error: Index " << name << " does not exist";
+        throw QueryError {ss.str()};
+    }
+
+    return *it->second;
+}
+
+class SchemaBindContext : public Expression::BindContext {
+public:
+    SchemaBindContext(Record::Schema &schema)
+    : mSchema(schema)
+    {
+    }
+
+    int field(const std::string &name) {
+        return mSchema.fieldIndex(name);
+    }
+
+private:
+    Record::Schema mSchema;
+};
+
+void Database::bindExpression(Expression &expression, Table &table, const std::string &tableName)
+{
+    SchemaBindContext context(table.schema());
+    try {
+        expression.bind(context);
+    } catch(Expression::BindError e) {
+        std::stringstream ss;
+        ss << "Error: No column named " << e.name << "in table " << tableName;
+        throw QueryError {ss.str()};
+    }
+}
+
+unsigned int Database::tableFieldIndex(const std::string &name, Table &table, const std::string &tableName)
+{
+    int fieldIndex = table.schema().fieldIndex(name);
+    if(fieldIndex == -1) {
+        std::stringstream ss;
+        ss << "Error: No column named " << name << "in table " << tableName;
+        throw QueryError {ss.str()};
+    }
+
+    return (unsigned int)fieldIndex;
 }

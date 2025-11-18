@@ -11,6 +11,7 @@ sources = [
     'PageSet.cpp',
     'QueryParser.cpp',
     'Record.cpp',
+    'RowIterator.cpp',
     'RowIterators/AggregateIterator.cpp',
     'RowIterators/ExtendedProjectIterator.cpp',
     'RowIterators/ForeignKeyJoinIterator.cpp',

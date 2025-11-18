@@ -12,18 +12,6 @@ namespace RowIterators {
         return mInputIterator->schema();
     }
 
-    class IteratorEvaluateContext : public Expression::EvaluateContext {
-    public:
-        IteratorEvaluateContext(RowIterator &iterator) : mIterator(iterator) {}
-
-        Value fieldValue(unsigned int field) {
-            return mIterator.getField(field);
-        }
-
-    private:
-        RowIterator &mIterator;
-    };
-
     void SelectIterator::start()
     {
         mInputIterator->start();
@@ -62,10 +50,8 @@ namespace RowIterators {
 
     void SelectIterator::updateIterator()
     {
-        IteratorEvaluateContext context(*mInputIterator);
-
         while(mInputIterator->valid()) {
-            Value predicateValue = mPredicate->evaluate(context);
+            Value predicateValue = evaluateExpression(*mPredicate);
             if(predicateValue.booleanValue()) {
                 break;
             }

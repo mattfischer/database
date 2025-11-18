@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <ranges>
 
 #include "Value.hpp"
 
@@ -14,6 +15,11 @@ namespace Record {
         };
 
         std::vector<Field> fields;
+
+        int fieldIndex(const std::string &name) {
+            auto it = std::ranges::find_if(fields, [&](const auto &a) { return a.name == name; });
+            return (it == fields.end()) ? -1 : (it - fields.begin());
+        }
     };
 
     class Writer {

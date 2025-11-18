@@ -25,6 +25,9 @@ public:
     virtual bool modify(const std::vector<ModifyEntry> &entries) = 0;
 
     virtual Value getField(unsigned int index) = 0;
+
+protected:
+    Value evaluateExpression(Expression &expression);
 };
 
 #endif

@@ -21,9 +21,6 @@ public:
 
     QueryResult executeQuery(const std::string &queryString);
 
-    Table &table(const std::string &name);
-    Index &index(const std::string &name);
-
 private:
     QueryResult createTable(ParsedQuery::CreateTable &createTable);
     QueryResult createIndex(ParsedQuery::CreateIndex &createIndex);
@@ -31,6 +28,11 @@ private:
     QueryResult select(ParsedQuery::Select &select);
     QueryResult delete_(ParsedQuery::Delete &delete_);
     QueryResult update(ParsedQuery::Update &update);
+
+    Table &findTable(const std::string &name);
+    Index &findIndex(const std::string &name);
+    void bindExpression(Expression &expression, Table &table, const std::string &tableName);
+    unsigned int tableFieldIndex(const std::string &name, Table &table, const std::string &tableName);
 
     PageSet mPageSet;
     std::map<std::string, std::unique_ptr<Table>> mTables;

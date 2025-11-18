@@ -61,28 +61,15 @@ namespace RowIterators {
         }
     }
 
-    class IteratorEvaluateContext : public Expression::EvaluateContext {
-    public:
-        IteratorEvaluateContext(RowIterator &iterator) : mIterator(iterator) {}
-
-        Value fieldValue(unsigned int field) {
-            return mIterator.getField(field);
-        }
-
-    private:
-        RowIterator &mIterator;
-    };
-
     void ExtendedProjectIterator::updateValues()
     {
         if(!mInputIterator->valid()) {
             return;
         }
 
-        IteratorEvaluateContext context(*mInputIterator);
         mValues.clear();
         for(auto &field : mFields) {
-            Value value = field.expression->evaluate(context);
+            Value value = evaluateExpression(*field.expression);
             mValues.push_back(std::move(value));
         }
     }
