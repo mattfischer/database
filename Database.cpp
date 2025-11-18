@@ -17,30 +17,30 @@ Database::QueryResult Database::executeQuery(const std::string &queryString)
 {
     QueryParser parser(queryString);
 
-    std::unique_ptr<Query> query = parser.parse();
+    std::unique_ptr<ParsedQuery> query = parser.parse();
     if(!query) {
         return {parser.errorMessage()};
     }
 
     switch(query->type) {
-        case Query::Type::CreateTable:
-            return createTable(std::get<Query::CreateTable>(query->query));
-        case Query::Type::CreateIndex:
-            return createIndex(std::get<Query::CreateIndex>(query->query));
-        case Query::Type::Insert:
-            return insert(std::get<Query::Insert>(query->query));
-        case Query::Type::Select:
-            return select(std::get<Query::Select>(query->query));
-        case Query::Type::Delete:
-            return delete_(std::get<Query::Delete>(query->query));
-        case Query::Type::Update:
-            return update(std::get<Query::Update>(query->query));
+        case ParsedQuery::Type::CreateTable:
+            return createTable(std::get<ParsedQuery::CreateTable>(query->query));
+        case ParsedQuery::Type::CreateIndex:
+            return createIndex(std::get<ParsedQuery::CreateIndex>(query->query));
+        case ParsedQuery::Type::Insert:
+            return insert(std::get<ParsedQuery::Insert>(query->query));
+        case ParsedQuery::Type::Select:
+            return select(std::get<ParsedQuery::Select>(query->query));
+        case ParsedQuery::Type::Delete:
+            return delete_(std::get<ParsedQuery::Delete>(query->query));
+        case ParsedQuery::Type::Update:
+            return update(std::get<ParsedQuery::Update>(query->query));
         default:
             return {};
     }
 }
 
-Database::QueryResult Database::createTable(Query::CreateTable &createTable)
+Database::QueryResult Database::createTable(ParsedQuery::CreateTable &createTable)
 {
     Page &rootPage = mPageSet.addPage();
     std::unique_ptr table = std::make_unique<Table>(rootPage, std::move(createTable.schema));
@@ -50,7 +50,7 @@ Database::QueryResult Database::createTable(Query::CreateTable &createTable)
     return {"Created table " + createTable.tableName};
 }
 
-Database::QueryResult Database::createIndex(Query::CreateIndex &createIndex)
+Database::QueryResult Database::createIndex(ParsedQuery::CreateIndex &createIndex)
 {
     auto it = mTables.find(createIndex.tableName);
     if(it == mTables.end()) {
@@ -87,7 +87,7 @@ Database::QueryResult Database::createIndex(Query::CreateIndex &createIndex)
     return {"Created index " + createIndex.indexName};
 }
 
-Database::QueryResult Database::insert(Query::Insert &insert)
+Database::QueryResult Database::insert(ParsedQuery::Insert &insert)
 {
     auto it = mTables.find(insert.tableName);
     if(it == mTables.end()) {
@@ -139,7 +139,7 @@ private:
     Record::Schema mSchema;
 };
 
-Database::QueryResult Database::select(Query::Select &select)
+Database::QueryResult Database::select(ParsedQuery::Select &select)
 {
     auto it = mTables.find(select.tableName);
     if(it == mTables.end()) {
@@ -168,7 +168,7 @@ Database::QueryResult Database::select(Query::Select &select)
     return {"", std::move(iterator)};
 }
 
-Database::QueryResult Database::delete_(Query::Delete &delete_)
+Database::QueryResult Database::delete_(ParsedQuery::Delete &delete_)
 {
     auto it = mTables.find(delete_.tableName);
     if(it == mTables.end()) {
@@ -205,7 +205,7 @@ Database::QueryResult Database::delete_(Query::Delete &delete_)
     return {ss.str()};
 }
 
-Database::QueryResult Database::update(Query::Update &update)
+Database::QueryResult Database::update(ParsedQuery::Update &update)
 {
     auto it = mTables.find(update.tableName);
     if(it == mTables.end()) {

@@ -12,7 +12,7 @@ QueryParser::QueryParser(const std::string &queryString)
 {
 }
 
-std::unique_ptr<Query> QueryParser::parse()
+std::unique_ptr<ParsedQuery> QueryParser::parse()
 {
     mPos = 0;
     skipWhitespace();
@@ -188,7 +188,7 @@ Value QueryParser::expectValue()
     }
 }
 
-std::unique_ptr<Query> QueryParser::parseQuery()
+std::unique_ptr<ParsedQuery> QueryParser::parseQuery()
 {
     if(matchLiteral("CREATE")) {
         if(matchLiteral("TABLE")) {
@@ -211,9 +211,9 @@ std::unique_ptr<Query> QueryParser::parseQuery()
     throwExpected("<query>");
 }
 
-std::unique_ptr<Query> QueryParser::parseCreateTable()
+std::unique_ptr<ParsedQuery> QueryParser::parseCreateTable()
 {
-    Query::CreateTable createTable;
+    ParsedQuery::CreateTable createTable;
 
     createTable.tableName = expectIdentifier();
     expectLiteral("(");
@@ -227,16 +227,16 @@ std::unique_ptr<Query> QueryParser::parseCreateTable()
         }
     }
 
-    auto query = std::make_unique<Query>();
-    query->type = Query::Type::CreateTable;
+    auto query = std::make_unique<ParsedQuery>();
+    query->type = ParsedQuery::Type::CreateTable;
     query->query = std::move(createTable);
 
     return query;    
 }
 
-std::unique_ptr<Query> QueryParser::parseCreateIndex()
+std::unique_ptr<ParsedQuery> QueryParser::parseCreateIndex()
 {
-    Query::CreateIndex createIndex;
+    ParsedQuery::CreateIndex createIndex;
 
     createIndex.indexName = expectIdentifier();
     expectLiteral("ON");
@@ -252,16 +252,16 @@ std::unique_ptr<Query> QueryParser::parseCreateIndex()
         }
     }
 
-    auto query = std::make_unique<Query>();
-    query->type = Query::Type::CreateIndex;
+    auto query = std::make_unique<ParsedQuery>();
+    query->type = ParsedQuery::Type::CreateIndex;
     query->query = std::move(createIndex);
 
     return query;    
 }
 
-std::unique_ptr<Query> QueryParser::parseInsert()
+std::unique_ptr<ParsedQuery> QueryParser::parseInsert()
 {
-    Query::Insert insert;
+    ParsedQuery::Insert insert;
 
     expectLiteral("INTO");
     insert.tableName = expectIdentifier();
@@ -277,16 +277,16 @@ std::unique_ptr<Query> QueryParser::parseInsert()
         }
     }
 
-    auto query = std::make_unique<Query>();
-    query->type = Query::Type::Insert;
+    auto query = std::make_unique<ParsedQuery>();
+    query->type = ParsedQuery::Type::Insert;
     query->query = std::move(insert);
 
     return query;
 }
 
-std::unique_ptr<Query> QueryParser::parseSelect()
+std::unique_ptr<ParsedQuery> QueryParser::parseSelect()
 {
-    Query::Select select;
+    ParsedQuery::Select select;
 
     expectLiteral("*");
     while(true) {
@@ -299,16 +299,16 @@ std::unique_ptr<Query> QueryParser::parseSelect()
         }
     }
 
-    auto query = std::make_unique<Query>();
-    query->type = Query::Type::Select;
+    auto query = std::make_unique<ParsedQuery>();
+    query->type = ParsedQuery::Type::Select;
     query->query = std::move(select);
 
     return query;
 }
 
-std::unique_ptr<Query> QueryParser::parseDelete()
+std::unique_ptr<ParsedQuery> QueryParser::parseDelete()
 {
-    Query::Delete delete_;
+    ParsedQuery::Delete delete_;
 
     while(true) {
         if(matchLiteral("FROM")) {
@@ -320,16 +320,16 @@ std::unique_ptr<Query> QueryParser::parseDelete()
         }
     }
 
-    auto query = std::make_unique<Query>();
-    query->type = Query::Type::Delete;
+    auto query = std::make_unique<ParsedQuery>();
+    query->type = ParsedQuery::Type::Delete;
     query->query = std::move(delete_);
 
     return query;
 }
 
-std::unique_ptr<Query> QueryParser::parseUpdate()
+std::unique_ptr<ParsedQuery> QueryParser::parseUpdate()
 {
-    Query::Update update;
+    ParsedQuery::Update update;
 
     update.tableName = expectIdentifier();
 
@@ -351,8 +351,8 @@ std::unique_ptr<Query> QueryParser::parseUpdate()
         }
     }
 
-    auto query = std::make_unique<Query>();
-    query->type = Query::Type::Update;
+    auto query = std::make_unique<ParsedQuery>();
+    query->type = ParsedQuery::Type::Update;
     query->query = std::move(update);
 
     return query;

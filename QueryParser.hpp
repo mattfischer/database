@@ -1,18 +1,66 @@
 #ifndef QUERYPARSER_HPP
 #define QUERYPARSER_HPP
 
-#include "Query.hpp"
 #include "Value.hpp"
+#include "Record.hpp"
+#include "Expression.hpp"
 
 #include <memory>
 #include <string>
 #include <optional>
+#include <variant>
+
+struct ParsedQuery {
+    struct CreateTable {
+        std::string tableName;
+        Record::Schema schema;
+    };
+
+    struct CreateIndex {
+        std::string indexName;
+        std::string tableName;
+        std::vector<std::string> columns;
+    };
+
+    struct Insert {
+        std::string tableName;
+        std::vector<Value> values;
+    };
+
+    struct Select {
+        std::string tableName;
+        std::unique_ptr<Expression> predicate;
+    };
+
+    struct Delete {
+        std::string tableName;
+        std::unique_ptr<Expression> predicate;
+    };
+
+    struct Update {
+        std::string tableName;
+        std::unique_ptr<Expression> predicate;
+        std::vector<std::tuple<std::string, std::unique_ptr<Expression>>> values;
+    };
+
+    enum class Type {
+        CreateTable,
+        CreateIndex,
+        Insert,
+        Select,
+        Delete,
+        Update
+    };
+
+    Type type;
+    std::variant<CreateTable, CreateIndex, Insert, Select, Delete, Update> query;
+};
 
 class QueryParser {
 public:
     QueryParser(const std::string &queryString);
 
-    std::unique_ptr<Query> parse();
+    std::unique_ptr<ParsedQuery> parse();
     const std::string &errorMessage();
 
 private:
@@ -29,13 +77,13 @@ private:
     std::optional<Value> matchValue();
     Value expectValue();
 
-    std::unique_ptr<Query> parseQuery();
-    std::unique_ptr<Query> parseCreateTable();
-    std::unique_ptr<Query> parseCreateIndex();
-    std::unique_ptr<Query> parseInsert();
-    std::unique_ptr<Query> parseSelect();
-    std::unique_ptr<Query> parseDelete();
-    std::unique_ptr<Query> parseUpdate();
+    std::unique_ptr<ParsedQuery> parseQuery();
+    std::unique_ptr<ParsedQuery> parseCreateTable();
+    std::unique_ptr<ParsedQuery> parseCreateIndex();
+    std::unique_ptr<ParsedQuery> parseInsert();
+    std::unique_ptr<ParsedQuery> parseSelect();
+    std::unique_ptr<ParsedQuery> parseDelete();
+    std::unique_ptr<ParsedQuery> parseUpdate();
 
     std::unique_ptr<Expression> expectExpression();
     std::unique_ptr<Expression> parseOrExpression();

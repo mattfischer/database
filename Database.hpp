@@ -4,8 +4,8 @@
 #include "PageSet.hpp"
 #include "Table.hpp"
 #include "Index.hpp"
-#include "Query.hpp"
 #include "RowIterator.hpp"
+#include "QueryParser.hpp"
 
 #include <map>
 #include <memory>
@@ -25,12 +25,12 @@ public:
     Index &index(const std::string &name);
 
 private:
-    QueryResult createTable(Query::CreateTable &createTable);
-    QueryResult createIndex(Query::CreateIndex &createIndex);
-    QueryResult insert(Query::Insert &insert);
-    QueryResult select(Query::Select &select);
-    QueryResult delete_(Query::Delete &delete_);
-    QueryResult update(Query::Update &update);
+    QueryResult createTable(ParsedQuery::CreateTable &createTable);
+    QueryResult createIndex(ParsedQuery::CreateIndex &createIndex);
+    QueryResult insert(ParsedQuery::Insert &insert);
+    QueryResult select(ParsedQuery::Select &select);
+    QueryResult delete_(ParsedQuery::Delete &delete_);
+    QueryResult update(ParsedQuery::Update &update);
 
     PageSet mPageSet;
     std::map<std::string, std::unique_ptr<Table>> mTables;
