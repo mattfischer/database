@@ -276,7 +276,29 @@ std::unique_ptr<ParsedQuery> QueryParser::parseSelect()
 {
     ParsedQuery::Select select;
 
-    expectLiteral("*");
+    if(matchLiteral("*")) {
+        select.columns = ParsedQuery::Select::AllColumns();
+    } else {
+        ParsedQuery::Select::ColumnList columnList;
+        while(true) {
+            std::unique_ptr<Expression> expression = expectExpression();
+            std::string name;
+            if(matchLiteral("AS")) {
+                name = expectIdentifier();
+            } else {
+                FieldExpression *field = dynamic_cast<FieldExpression*>(expression.get());
+                if(field) {
+                    name = field->name();
+                }
+            }
+            columnList.columns.push_back({name, std::move(expression)});
+            if(!matchLiteral(",")) {
+                break;
+            }
+        }
+        select.columns = std::move(columnList);
+    }
+
     while(true) {
         if(matchLiteral("FROM")) {
             select.tableName = expectIdentifier();

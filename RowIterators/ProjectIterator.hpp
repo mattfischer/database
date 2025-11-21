@@ -2,18 +2,17 @@
 #define ROWITERATORS_PROJECTITERATOR_HPP
 
 #include "RowIterator.hpp"
-
-#include <memory>
+#include "Expression.hpp"
 
 namespace RowIterators {
     class ProjectIterator : public RowIterator {
     public:
         struct FieldDefinition {
-            unsigned int index;
             std::string name;
+            std::unique_ptr<Expression> expression;
         };
 
-        ProjectIterator(std::unique_ptr<RowIterator> inputIterator, std::vector<FieldDefinition> fields);
+        ProjectIterator(std::unique_ptr<RowIterator> inputIterator, std::vector<FieldDefinition> fieldDefinitions);
 
         Record::Schema &schema() override;
 
@@ -26,9 +25,13 @@ namespace RowIterators {
         Value getField(unsigned int index) override;
 
     private:
+        void updateValues();
+
+        Record::Schema mSchema;
         std::unique_ptr<RowIterator> mInputIterator;
         std::vector<FieldDefinition> mFields;
-        Record::Schema mSchema;
+        std::vector<Value> mValues;
     };
 }
+
 #endif

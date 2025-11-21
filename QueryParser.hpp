@@ -28,6 +28,12 @@ struct ParsedQuery {
     };
 
     struct Select {
+        struct AllColumns {};
+        struct ColumnList {
+            std::vector<std::tuple<std::string, std::unique_ptr<Expression>>> columns;
+        };
+        std::variant<AllColumns, ColumnList> columns;
+
         std::string tableName;
         std::unique_ptr<Expression> predicate;
         std::string sortField;

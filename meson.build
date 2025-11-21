@@ -13,7 +13,6 @@ sources = [
     'Record.cpp',
     'RowIterator.cpp',
     'RowIterators/AggregateIterator.cpp',
-    'RowIterators/ExtendedProjectIterator.cpp',
     'RowIterators/ForeignKeyJoinIterator.cpp',
     'RowIterators/IndexIterator.cpp',
     'RowIterators/ProjectIterator.cpp',

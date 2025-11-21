@@ -27,7 +27,7 @@ public:
     virtual Value getField(unsigned int index) = 0;
 
 protected:
-    Value evaluateExpression(Expression &expression);
+    static Value evaluateExpression(Expression &expression, RowIterator &iterator);
 };
 
 #endif

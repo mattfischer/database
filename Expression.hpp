@@ -20,7 +20,7 @@ public:
     class BindContext {
     public:
         virtual ~BindContext() = default;
-        virtual int field(const std::string &name) = 0;
+        virtual std::tuple<int, Value::Type> field(const std::string &name) = 0;
     };
 
     struct BindError {
@@ -28,6 +28,7 @@ public:
     };
 
     virtual void bind(BindContext &context) = 0;
+    virtual Value::Type type() = 0;
 };
 
 class CompareExpression : public Expression {
@@ -44,6 +45,7 @@ public:
     CompareExpression(CompareType compareType, std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand);
     Value evaluate(EvaluateContext &context) override;
     void bind(BindContext &context) override;
+    Value::Type type() override;
 
 private:
     CompareType mCompareType;
@@ -62,6 +64,7 @@ public:
     LogicalExpression(LogicalType logicalType, std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand);
     Value evaluate(EvaluateContext &context) override;
     void bind(BindContext &context) override;
+    Value::Type type() override;
 
 private:
     LogicalType mLogicalType;
@@ -82,6 +85,7 @@ public:
     ArithmeticExpression(ArithmeticType arithmeticType, std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand);
     Value evaluate(EvaluateContext &context) override;
     void bind(BindContext &context) override;
+    Value::Type type() override;
 
 private:
     ArithmeticType mArithmeticType;
@@ -94,6 +98,7 @@ public:
     ConstantExpression(Value value);
     Value evaluate(EvaluateContext &context) override;
     void bind(BindContext &context) override;
+    Value::Type type() override;
 
 private:
     Value mValue;
@@ -104,12 +109,16 @@ public:
     FieldExpression(int field);
     FieldExpression(const std::string &name);
 
+    const std::string &name();
+
     Value evaluate(EvaluateContext &context) override;
     void bind(BindContext &context) override;
+    Value::Type type() override;
 
 private:
     int mField;
     std::string mName;
+    Value::Type mType;
 };
 
 #endif

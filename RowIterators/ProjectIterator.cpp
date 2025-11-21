@@ -1,12 +1,14 @@
 #include "RowIterators/ProjectIterator.hpp"
 
+#include "Table.hpp"
+
 namespace RowIterators {
     ProjectIterator::ProjectIterator(std::unique_ptr<RowIterator> inputIterator, std::vector<FieldDefinition> fields)
     : mInputIterator(std::move(inputIterator))
     , mFields(std::move(fields))
-    {
+    {        
         for(auto &field : mFields) {
-            mSchema.fields.push_back({mInputIterator->schema().fields[field.index].type, field.name});
+            mSchema.fields.push_back({field.expression->type(), field.name});
         }
     }
 
@@ -18,6 +20,7 @@ namespace RowIterators {
     void ProjectIterator::start()
     {
         mInputIterator->start();
+        updateValues();
     }
 
     bool ProjectIterator::valid()
@@ -28,11 +31,16 @@ namespace RowIterators {
     void ProjectIterator::next()
     {
         mInputIterator->next();
+        updateValues();
     }
 
     bool ProjectIterator::remove()
     {
-        return mInputIterator->remove();
+        bool result = mInputIterator->remove();
+        if(result) {
+            updateValues();
+        }
+        return result;
     }
 
     bool ProjectIterator::modify(const std::vector<ModifyEntry> &entries)
@@ -42,6 +50,19 @@ namespace RowIterators {
 
     Value ProjectIterator::getField(unsigned int index)
     {
-        return mInputIterator->getField(mFields[index].index);
+        return mValues[index];
+    }
+
+    void ProjectIterator::updateValues()
+    {
+        if(!mInputIterator->valid()) {
+            return;
+        }
+
+        mValues.clear();
+        for(auto &field : mFields) {
+            Value value = evaluateExpression(*field.expression, *mInputIterator);
+            mValues.push_back(std::move(value));
+        }
     }
 }

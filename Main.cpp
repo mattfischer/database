@@ -7,7 +7,6 @@
 #include "Index.hpp"
 
 #include "RowIterators/AggregateIterator.hpp"
-#include "RowIterators/ExtendedProjectIterator.hpp"
 #include "RowIterators/IndexIterator.hpp"
 #include "RowIterators/ProjectIterator.hpp"
 #include "RowIterators/SelectIterator.hpp"
@@ -101,7 +100,7 @@ int main(int argc, char *argv[])
         query(ss.str());
     }
 
-    query("SELECT * FROM Table WHERE value == 3 ORDER BY value2");
+    query("SELECT value, value2 AS a FROM Table WHERE value == 3 ORDER BY value2");
 
     return 0;
 }

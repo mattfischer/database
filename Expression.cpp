@@ -34,6 +34,11 @@ void CompareExpression::bind(BindContext &context)
     mRightOperand->bind(context);
 }
 
+Value::Type CompareExpression::type()
+{
+    return Value::Type::Boolean;
+}
+
 LogicalExpression::LogicalExpression(LogicalType logicalType, std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand)
 : mLogicalType(logicalType)
 , mLeftOperand(std::move(leftOperand))
@@ -60,6 +65,11 @@ void LogicalExpression::bind(BindContext &context)
 {
     mLeftOperand->bind(context);
     if(mRightOperand) mRightOperand->bind(context);
+}
+
+Value::Type LogicalExpression::type()
+{
+    return Value::Type::Boolean;
 }
 
 ArithmeticExpression::ArithmeticExpression(ArithmeticType arithmeticType, std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand)
@@ -94,6 +104,11 @@ void ArithmeticExpression::bind(BindContext &context)
     if(mRightOperand) mRightOperand->bind(context);
 }
 
+Value::Type ArithmeticExpression::type()
+{
+    return mLeftOperand->type();
+}
+
 ConstantExpression::ConstantExpression(Value value)
 : mValue(value)
 {
@@ -108,6 +123,11 @@ void ConstantExpression::bind(BindContext &context)
 {
 }
 
+Value::Type ConstantExpression::type()
+{
+    return mValue.type();
+}
+
 FieldExpression::FieldExpression(int field)
 : mField(field)
 {
@@ -119,6 +139,11 @@ FieldExpression::FieldExpression(const std::string &name)
     mField = -1;
 }
 
+const std::string &FieldExpression::name()
+{
+    return mName;
+}
+
 Value FieldExpression::evaluate(EvaluateContext &context)
 {
     return context.fieldValue(mField);
@@ -126,8 +151,13 @@ Value FieldExpression::evaluate(EvaluateContext &context)
 
 void FieldExpression::bind(BindContext &context)
 {
-    mField = context.field(mName);
+    std::tie(mField, mType) = context.field(mName);
     if(mField == -1) {
         throw BindError {mName};
     }
+}
+
+Value::Type FieldExpression::type()
+{
+    return mType;
 }

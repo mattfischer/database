@@ -5,6 +5,7 @@
 #include "RowIterators/TableIterator.hpp"
 #include "RowIterators/SelectIterator.hpp"
 #include "RowIterators/SortIterator.hpp"
+#include "RowIterators/ProjectIterator.hpp"
 
 #include <sstream>
 #include <ranges>
@@ -123,6 +124,19 @@ Database::QueryResult Database::select(ParsedQuery::Select &select)
         iterator = std::make_unique<RowIterators::SortIterator>(std::move(iterator), field);
     }
 
+    if(std::holds_alternative<ParsedQuery::Select::ColumnList>(select.columns)) {
+        auto &columnList = std::get<ParsedQuery::Select::ColumnList>(select.columns);
+        std::vector<RowIterators::ProjectIterator::FieldDefinition> fields;
+        for(auto &[name, expression] : columnList.columns) {
+            bindExpression(*expression, table, select.tableName);
+            RowIterators::ProjectIterator::FieldDefinition field;
+            field.name = name;
+            field.expression = std::move(expression);
+            fields.push_back(std::move(field));
+        }
+        iterator = std::make_unique<RowIterators::ProjectIterator>(std::move(iterator), std::move(fields));
+    }
+
     return {"", std::move(iterator)};
 }
 
@@ -210,8 +224,11 @@ public:
     {
     }
 
-    int field(const std::string &name) {
-        return mSchema.fieldIndex(name);
+    std::tuple<int, Value::Type> field(const std::string &name) {
+        int fieldIndex = mSchema.fieldIndex(name);
+        Value::Type type = mSchema.fields[fieldIndex].type;
+
+        return {fieldIndex, type};
     }
 
 private:

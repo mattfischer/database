@@ -41,7 +41,7 @@ namespace RowIterators {
         }
 
         for(const auto &entry : entries) {
-            Value value = evaluateExpression(*entry.expression);
+            Value value = evaluateExpression(*entry.expression, *this);
             writer.setField(entry.field, value);
         }
 

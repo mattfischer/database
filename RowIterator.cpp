@@ -12,9 +12,9 @@ private:
     RowIterator &mIterator;
 };
 
-Value RowIterator::evaluateExpression(Expression &expression)
+Value RowIterator::evaluateExpression(Expression &expression, RowIterator &iterator)
 {
-    IteratorEvaluateContext context(*this);
+    IteratorEvaluateContext context(iterator);
 
     return expression.evaluate(context);
 }

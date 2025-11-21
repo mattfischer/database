@@ -51,7 +51,7 @@ namespace RowIterators {
     void SelectIterator::updateIterator()
     {
         while(mInputIterator->valid()) {
-            Value predicateValue = evaluateExpression(*mPredicate);
+            Value predicateValue = evaluateExpression(*mPredicate, *mInputIterator);
             if(predicateValue.booleanValue()) {
                 break;
             }
