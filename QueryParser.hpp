@@ -44,16 +44,6 @@ struct ParsedQuery {
         std::vector<std::tuple<std::string, std::unique_ptr<Expression>>> values;
     };
 
-    enum class Type {
-        CreateTable,
-        CreateIndex,
-        Insert,
-        Select,
-        Delete,
-        Update
-    };
-
-    Type type;
     std::variant<CreateTable, CreateIndex, Insert, Select, Delete, Update> query;
 };
 

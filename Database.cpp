@@ -28,22 +28,19 @@ Database::QueryResult Database::executeQuery(const std::string &queryString)
     }
 
     try {
-        switch(query->type) {
-            case ParsedQuery::Type::CreateTable:
-                return createTable(std::get<ParsedQuery::CreateTable>(query->query));
-            case ParsedQuery::Type::CreateIndex:
-                return createIndex(std::get<ParsedQuery::CreateIndex>(query->query));
-            case ParsedQuery::Type::Insert:
-                return insert(std::get<ParsedQuery::Insert>(query->query));
-            case ParsedQuery::Type::Select:
-                return select(std::get<ParsedQuery::Select>(query->query));
-            case ParsedQuery::Type::Delete:
-                return delete_(std::get<ParsedQuery::Delete>(query->query));
-            case ParsedQuery::Type::Update:
-                return update(std::get<ParsedQuery::Update>(query->query));
-            default:
-                return {};
-        }
+        if(std::holds_alternative<ParsedQuery::CreateTable>(query->query))
+            return createTable(std::get<ParsedQuery::CreateTable>(query->query));
+        else if(std::holds_alternative<ParsedQuery::CreateIndex>(query->query))
+            return createIndex(std::get<ParsedQuery::CreateIndex>(query->query));
+        else if(std::holds_alternative<ParsedQuery::Insert>(query->query))
+            return insert(std::get<ParsedQuery::Insert>(query->query));
+        else if(std::holds_alternative<ParsedQuery::Select>(query->query))
+            return select(std::get<ParsedQuery::Select>(query->query));
+        else if(std::holds_alternative<ParsedQuery::Delete>(query->query))
+            return delete_(std::get<ParsedQuery::Delete>(query->query));
+        else if(std::holds_alternative<ParsedQuery::Update>(query->query))
+            return update(std::get<ParsedQuery::Update>(query->query));
+        else return {};
     } catch(QueryError e) {
         return {e.message};
     }

@@ -227,11 +227,7 @@ std::unique_ptr<ParsedQuery> QueryParser::parseCreateTable()
         }
     }
 
-    auto query = std::make_unique<ParsedQuery>();
-    query->type = ParsedQuery::Type::CreateTable;
-    query->query = std::move(createTable);
-
-    return query;    
+    return std::make_unique<ParsedQuery>(std::move(createTable));
 }
 
 std::unique_ptr<ParsedQuery> QueryParser::parseCreateIndex()
@@ -252,11 +248,7 @@ std::unique_ptr<ParsedQuery> QueryParser::parseCreateIndex()
         }
     }
 
-    auto query = std::make_unique<ParsedQuery>();
-    query->type = ParsedQuery::Type::CreateIndex;
-    query->query = std::move(createIndex);
-
-    return query;    
+    return std::make_unique<ParsedQuery>(std::move(createIndex));
 }
 
 std::unique_ptr<ParsedQuery> QueryParser::parseInsert()
@@ -277,11 +269,7 @@ std::unique_ptr<ParsedQuery> QueryParser::parseInsert()
         }
     }
 
-    auto query = std::make_unique<ParsedQuery>();
-    query->type = ParsedQuery::Type::Insert;
-    query->query = std::move(insert);
-
-    return query;
+    return std::make_unique<ParsedQuery>(std::move(insert));
 }
 
 std::unique_ptr<ParsedQuery> QueryParser::parseSelect()
@@ -302,11 +290,7 @@ std::unique_ptr<ParsedQuery> QueryParser::parseSelect()
         }
     }
 
-    auto query = std::make_unique<ParsedQuery>();
-    query->type = ParsedQuery::Type::Select;
-    query->query = std::move(select);
-
-    return query;
+    return std::make_unique<ParsedQuery>(std::move(select));
 }
 
 std::unique_ptr<ParsedQuery> QueryParser::parseDelete()
@@ -323,11 +307,7 @@ std::unique_ptr<ParsedQuery> QueryParser::parseDelete()
         }
     }
 
-    auto query = std::make_unique<ParsedQuery>();
-    query->type = ParsedQuery::Type::Delete;
-    query->query = std::move(delete_);
-
-    return query;
+    return std::make_unique<ParsedQuery>(std::move(delete_));
 }
 
 std::unique_ptr<ParsedQuery> QueryParser::parseUpdate()
@@ -354,11 +334,7 @@ std::unique_ptr<ParsedQuery> QueryParser::parseUpdate()
         }
     }
 
-    auto query = std::make_unique<ParsedQuery>();
-    query->type = ParsedQuery::Type::Update;
-    query->query = std::move(update);
-
-    return query;
+    return std::make_unique<ParsedQuery>(std::move(update));
 }
 
 std::unique_ptr<Expression> QueryParser::expectExpression()
