@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
         query(ss.str());
     }
 
-    query("SELECT value, value2 AS a FROM Table WHERE value == 3 ORDER BY value2");
+    query("SELECT AVG(value2) FROM Table GROUP BY value");
 
     return 0;
 }

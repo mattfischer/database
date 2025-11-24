@@ -32,7 +32,19 @@ struct ParsedQuery {
         struct ColumnList {
             std::vector<std::tuple<std::string, std::unique_ptr<Expression>>> columns;
         };
-        std::variant<AllColumns, ColumnList> columns;
+        struct Aggregate {
+            enum class Operation {
+                Min,
+                Average,
+                Sum,
+                Max,
+                Count
+            };
+            Operation operation;
+            std::string field;
+            std::string groupField;
+        };
+        std::variant<AllColumns, ColumnList, Aggregate> columns;
 
         std::string tableName;
         std::unique_ptr<Expression> predicate;

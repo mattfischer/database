@@ -101,18 +101,20 @@ namespace RowIterators {
                 }
             }
 
-            Value newValue = mInputIterator->getField(mField);
-            switch(mOperation) {
-                case Min:
-                    if(count == 0 || newValue < value) value = newValue;
-                    break;
-                case Average:
-                case Sum:
-                    if(count == 0) value = newValue; else value = value + newValue;
-                    break;
-                case Max:
-                    if(count == 0 || newValue > value) value = newValue;
-                    break;
+            if(mOperation != Operation::Count) {
+                Value newValue = mInputIterator->getField(mField);
+                switch(mOperation) {
+                    case Min:
+                        if(count == 0 || newValue < value) value = newValue;
+                        break;
+                    case Average:
+                    case Sum:
+                        if(count == 0) value = newValue; else value = value + newValue;
+                        break;
+                    case Max:
+                        if(count == 0 || newValue > value) value = newValue;
+                        break;
+                }
             }
 
             count++;

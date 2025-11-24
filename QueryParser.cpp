@@ -276,7 +276,32 @@ std::unique_ptr<ParsedQuery> QueryParser::parseSelect()
 {
     ParsedQuery::Select select;
 
-    if(matchLiteral("*")) {
+    std::optional<ParsedQuery::Select::Aggregate::Operation> aggregateOperation;
+    if(matchLiteral("MIN")) {
+        aggregateOperation = ParsedQuery::Select::Aggregate::Operation::Min;
+    } else if(matchLiteral("AVG")) {
+        aggregateOperation = ParsedQuery::Select::Aggregate::Operation::Average;
+    } else if(matchLiteral("SUM")) {
+        aggregateOperation = ParsedQuery::Select::Aggregate::Operation::Sum;
+    } else if(matchLiteral("MAX")) {
+        aggregateOperation = ParsedQuery::Select::Aggregate::Operation::Max;
+    } else if(matchLiteral("COUNT")) {
+        aggregateOperation = ParsedQuery::Select::Aggregate::Operation::Count;
+    }
+    
+    if(aggregateOperation) {
+        ParsedQuery::Select::Aggregate aggregate;
+        aggregate.operation = *aggregateOperation;
+
+        expectLiteral("(");
+        if(aggregate.operation == ParsedQuery::Select::Aggregate::Operation::Count) {
+            expectLiteral("*");
+        } else {
+            aggregate.field = expectIdentifier();
+        }
+        expectLiteral(")");
+        select.columns = std::move(aggregate);
+    } else if(matchLiteral("*")) {
         select.columns = ParsedQuery::Select::AllColumns();
     } else {
         ParsedQuery::Select::ColumnList columnList;
@@ -307,6 +332,13 @@ std::unique_ptr<ParsedQuery> QueryParser::parseSelect()
         } else if(matchLiteral("ORDER")) {
             expectLiteral("BY");
             select.sortField = expectIdentifier();
+        } else if(matchLiteral("GROUP")) {
+            expectLiteral("BY");
+            if(std::holds_alternative<ParsedQuery::Select::Aggregate>(select.columns)) {
+                std::get<ParsedQuery::Select::Aggregate>(select.columns).groupField = expectIdentifier();
+            } else {
+                throw ParseError {"GROUP BY in non-aggregate query", mPos};
+            }
         } else {
             break;
         }

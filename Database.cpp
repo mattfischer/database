@@ -6,6 +6,7 @@
 #include "RowIterators/SelectIterator.hpp"
 #include "RowIterators/SortIterator.hpp"
 #include "RowIterators/ProjectIterator.hpp"
+#include "RowIterators/AggregateIterator.hpp"
 
 #include <sstream>
 #include <ranges>
@@ -119,22 +120,44 @@ Database::QueryResult Database::select(ParsedQuery::Select &select)
         iterator = std::make_unique<RowIterators::SelectIterator>(std::move(iterator), std::move(select.predicate));
     }
 
-    if(!select.sortField.empty()) {
-        unsigned int field = tableFieldIndex(select.sortField, table, select.tableName);
-        iterator = std::make_unique<RowIterators::SortIterator>(std::move(iterator), field);
-    }
-
-    if(std::holds_alternative<ParsedQuery::Select::ColumnList>(select.columns)) {
-        auto &columnList = std::get<ParsedQuery::Select::ColumnList>(select.columns);
-        std::vector<RowIterators::ProjectIterator::FieldDefinition> fields;
-        for(auto &[name, expression] : columnList.columns) {
-            bindExpression(*expression, table, select.tableName);
-            RowIterators::ProjectIterator::FieldDefinition field;
-            field.name = name;
-            field.expression = std::move(expression);
-            fields.push_back(std::move(field));
+    if(std::holds_alternative<ParsedQuery::Select::Aggregate>(select.columns)) {
+        auto &aggregate = std::get<ParsedQuery::Select::Aggregate>(select.columns);
+        RowIterators::AggregateIterator::Operation operation;
+        switch(aggregate.operation) {
+            case ParsedQuery::Select::Aggregate::Operation::Min: operation = RowIterators::AggregateIterator::Operation::Min; break;
+            case ParsedQuery::Select::Aggregate::Operation::Average: operation = RowIterators::AggregateIterator::Operation::Average; break;
+            case ParsedQuery::Select::Aggregate::Operation::Sum: operation = RowIterators::AggregateIterator::Operation::Sum; break;
+            case ParsedQuery::Select::Aggregate::Operation::Max: operation = RowIterators::AggregateIterator::Operation::Max; break;
+            case ParsedQuery::Select::Aggregate::Operation::Count: operation = RowIterators::AggregateIterator::Operation::Count; break;
+        };
+        unsigned int field = -1;
+        if(aggregate.operation != ParsedQuery::Select::Aggregate::Operation::Count) {
+            field = table.schema().fieldIndex(aggregate.field);
         }
-        iterator = std::make_unique<RowIterators::ProjectIterator>(std::move(iterator), std::move(fields));
+        unsigned int groupField = -1;
+        if(aggregate.groupField != "") {
+            groupField = table.schema().fieldIndex(aggregate.groupField);
+            iterator = std::make_unique<RowIterators::SortIterator>(std::move(iterator), groupField);
+        }
+        iterator = std::make_unique<RowIterators::AggregateIterator>(std::move(iterator), operation, field, groupField);
+    } else {
+        if(!select.sortField.empty()) {
+            unsigned int field = tableFieldIndex(select.sortField, table, select.tableName);
+            iterator = std::make_unique<RowIterators::SortIterator>(std::move(iterator), field);
+        }
+
+        if(std::holds_alternative<ParsedQuery::Select::ColumnList>(select.columns)) {
+            auto &columnList = std::get<ParsedQuery::Select::ColumnList>(select.columns);
+            std::vector<RowIterators::ProjectIterator::FieldDefinition> fields;
+            for(auto &[name, expression] : columnList.columns) {
+                bindExpression(*expression, table, select.tableName);
+                RowIterators::ProjectIterator::FieldDefinition field;
+                field.name = name;
+                field.expression = std::move(expression);
+                fields.push_back(std::move(field));
+            }
+            iterator = std::make_unique<RowIterators::ProjectIterator>(std::move(iterator), std::move(fields));
+        }
     }
 
     return {"", std::move(iterator)};
