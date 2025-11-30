@@ -12,13 +12,13 @@ QueryParser::QueryParser(const std::string &queryString)
 {
 }
 
-std::unique_ptr<ParsedQuery> QueryParser::parse()
+std::unique_ptr<Database::Operation> QueryParser::parse()
 {
     mPos = 0;
     skipWhitespace();
 
     try {
-        return parseQuery();
+        return parseOperation();
     } catch (ParseError err) {
         std::stringstream ss;
 
@@ -188,7 +188,7 @@ Value QueryParser::expectValue()
     }
 }
 
-std::unique_ptr<ParsedQuery> QueryParser::parseQuery()
+std::unique_ptr<Database::Operation> QueryParser::parseOperation()
 {
     if(matchLiteral("CREATE")) {
         if(matchLiteral("TABLE")) {
@@ -211,9 +211,9 @@ std::unique_ptr<ParsedQuery> QueryParser::parseQuery()
     throwExpected("<query>");
 }
 
-std::unique_ptr<ParsedQuery> QueryParser::parseCreateTable()
+std::unique_ptr<Database::Operation> QueryParser::parseCreateTable()
 {
-    ParsedQuery::CreateTable createTable;
+    Database::Operation::CreateTable createTable;
 
     createTable.tableName = expectIdentifier();
     expectLiteral("(");
@@ -227,12 +227,12 @@ std::unique_ptr<ParsedQuery> QueryParser::parseCreateTable()
         }
     }
 
-    return std::make_unique<ParsedQuery>(std::move(createTable));
+    return std::make_unique<Database::Operation>(std::move(createTable));
 }
 
-std::unique_ptr<ParsedQuery> QueryParser::parseCreateIndex()
+std::unique_ptr<Database::Operation> QueryParser::parseCreateIndex()
 {
-    ParsedQuery::CreateIndex createIndex;
+    Database::Operation::CreateIndex createIndex;
 
     createIndex.indexName = expectIdentifier();
     expectLiteral("ON");
@@ -248,12 +248,12 @@ std::unique_ptr<ParsedQuery> QueryParser::parseCreateIndex()
         }
     }
 
-    return std::make_unique<ParsedQuery>(std::move(createIndex));
+    return std::make_unique<Database::Operation>(std::move(createIndex));
 }
 
-std::unique_ptr<ParsedQuery> QueryParser::parseInsert()
+std::unique_ptr<Database::Operation> QueryParser::parseInsert()
 {
-    ParsedQuery::Insert insert;
+    Database::Operation::Insert insert;
 
     expectLiteral("INTO");
     insert.tableName = expectIdentifier();
@@ -269,42 +269,42 @@ std::unique_ptr<ParsedQuery> QueryParser::parseInsert()
         }
     }
 
-    return std::make_unique<ParsedQuery>(std::move(insert));
+    return std::make_unique<Database::Operation>(std::move(insert));
 }
 
-std::unique_ptr<ParsedQuery> QueryParser::parseSelect()
+std::unique_ptr<Database::Operation> QueryParser::parseSelect()
 {
-    ParsedQuery::Select select;
+    Database::Operation::Select select;
 
-    std::optional<ParsedQuery::Select::Aggregate::Operation> aggregateOperation;
+    std::optional<Database::Query::Aggregate::Operation> aggregateOperation;
     if(matchLiteral("MIN")) {
-        aggregateOperation = ParsedQuery::Select::Aggregate::Operation::Min;
+        aggregateOperation = Database::Query::Aggregate::Operation::Min;
     } else if(matchLiteral("AVG")) {
-        aggregateOperation = ParsedQuery::Select::Aggregate::Operation::Average;
+        aggregateOperation = Database::Query::Aggregate::Operation::Average;
     } else if(matchLiteral("SUM")) {
-        aggregateOperation = ParsedQuery::Select::Aggregate::Operation::Sum;
+        aggregateOperation = Database::Query::Aggregate::Operation::Sum;
     } else if(matchLiteral("MAX")) {
-        aggregateOperation = ParsedQuery::Select::Aggregate::Operation::Max;
+        aggregateOperation = Database::Query::Aggregate::Operation::Max;
     } else if(matchLiteral("COUNT")) {
-        aggregateOperation = ParsedQuery::Select::Aggregate::Operation::Count;
+        aggregateOperation = Database::Query::Aggregate::Operation::Count;
     }
     
     if(aggregateOperation) {
-        ParsedQuery::Select::Aggregate aggregate;
+        Database::Query::Aggregate aggregate;
         aggregate.operation = *aggregateOperation;
 
         expectLiteral("(");
-        if(aggregate.operation == ParsedQuery::Select::Aggregate::Operation::Count) {
+        if(aggregate.operation == Database::Query::Aggregate::Operation::Count) {
             expectLiteral("*");
         } else {
             aggregate.field = expectIdentifier();
         }
         expectLiteral(")");
-        select.columns = std::move(aggregate);
+        select.query.columns = std::move(aggregate);
     } else if(matchLiteral("*")) {
-        select.columns = ParsedQuery::Select::AllColumns();
+        select.query.columns = Database::Query::AllColumns();
     } else {
-        ParsedQuery::Select::ColumnList columnList;
+        Database::Query::ColumnList columnList;
         while(true) {
             std::unique_ptr<Expression> expression = expectExpression();
             std::string name;
@@ -321,21 +321,21 @@ std::unique_ptr<ParsedQuery> QueryParser::parseSelect()
                 break;
             }
         }
-        select.columns = std::move(columnList);
+        select.query.columns = std::move(columnList);
     }
 
     while(true) {
         if(matchLiteral("FROM")) {
-            select.tableName = expectIdentifier();
+            select.query.tableName = expectIdentifier();
         } else if(matchLiteral("WHERE")) {
-            select.predicate = expectExpression();
+            select.query.predicate = expectExpression();
         } else if(matchLiteral("ORDER")) {
             expectLiteral("BY");
-            select.sortField = expectIdentifier();
+            select.query.sortField = expectIdentifier();
         } else if(matchLiteral("GROUP")) {
             expectLiteral("BY");
-            if(std::holds_alternative<ParsedQuery::Select::Aggregate>(select.columns)) {
-                std::get<ParsedQuery::Select::Aggregate>(select.columns).groupField = expectIdentifier();
+            if(std::holds_alternative<Database::Query::Aggregate>(select.query.columns)) {
+                std::get<Database::Query::Aggregate>(select.query.columns).groupField = expectIdentifier();
             } else {
                 throw ParseError {"GROUP BY in non-aggregate query", mPos};
             }
@@ -344,31 +344,34 @@ std::unique_ptr<ParsedQuery> QueryParser::parseSelect()
         }
     }
 
-    return std::make_unique<ParsedQuery>(std::move(select));
+    return std::make_unique<Database::Operation>(std::move(select));
 }
 
-std::unique_ptr<ParsedQuery> QueryParser::parseDelete()
+std::unique_ptr<Database::Operation> QueryParser::parseDelete()
 {
-    ParsedQuery::Delete delete_;
+    Database::Operation::Delete delete_;
+
+    delete_.query.columns = Database::Query::AllColumns();
 
     while(true) {
         if(matchLiteral("FROM")) {
-            delete_.tableName = expectIdentifier();
+            delete_.query.tableName = expectIdentifier();
         } else if(matchLiteral("WHERE")) {
-            delete_.predicate = expectExpression();
+            delete_.query.predicate = expectExpression();
         } else {
             break;
         }
     }
 
-    return std::make_unique<ParsedQuery>(std::move(delete_));
+    return std::make_unique<Database::Operation>(std::move(delete_));
 }
 
-std::unique_ptr<ParsedQuery> QueryParser::parseUpdate()
+std::unique_ptr<Database::Operation> QueryParser::parseUpdate()
 {
-    ParsedQuery::Update update;
+    Database::Operation::Update update;
 
-    update.tableName = expectIdentifier();
+    update.query.columns = Database::Query::AllColumns();
+    update.query.tableName = expectIdentifier();
 
     while(true) {
         if(matchLiteral("SET")) {
@@ -382,13 +385,13 @@ std::unique_ptr<ParsedQuery> QueryParser::parseUpdate()
                 }
             }
         } else if(matchLiteral("WHERE")) {
-            update.predicate = expectExpression();
+            update.query.predicate = expectExpression();
         } else {
             break;
         }
     }
 
-    return std::make_unique<ParsedQuery>(std::move(update));
+    return std::make_unique<Database::Operation>(std::move(update));
 }
 
 std::unique_ptr<Expression> QueryParser::expectExpression()

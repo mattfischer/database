@@ -5,71 +5,18 @@
 #include "Record.hpp"
 #include "Expression.hpp"
 
+#include "Database.hpp"
+
 #include <memory>
 #include <string>
 #include <optional>
 #include <variant>
 
-struct ParsedQuery {
-    struct CreateTable {
-        std::string tableName;
-        Record::Schema schema;
-    };
-
-    struct CreateIndex {
-        std::string indexName;
-        std::string tableName;
-        std::vector<std::string> columns;
-    };
-
-    struct Insert {
-        std::string tableName;
-        std::vector<Value> values;
-    };
-
-    struct Select {
-        struct AllColumns {};
-        struct ColumnList {
-            std::vector<std::tuple<std::string, std::unique_ptr<Expression>>> columns;
-        };
-        struct Aggregate {
-            enum class Operation {
-                Min,
-                Average,
-                Sum,
-                Max,
-                Count
-            };
-            Operation operation;
-            std::string field;
-            std::string groupField;
-        };
-        std::variant<AllColumns, ColumnList, Aggregate> columns;
-
-        std::string tableName;
-        std::unique_ptr<Expression> predicate;
-        std::string sortField;
-    };
-
-    struct Delete {
-        std::string tableName;
-        std::unique_ptr<Expression> predicate;
-    };
-
-    struct Update {
-        std::string tableName;
-        std::unique_ptr<Expression> predicate;
-        std::vector<std::tuple<std::string, std::unique_ptr<Expression>>> values;
-    };
-
-    std::variant<CreateTable, CreateIndex, Insert, Select, Delete, Update> query;
-};
-
 class QueryParser {
 public:
     QueryParser(const std::string &queryString);
 
-    std::unique_ptr<ParsedQuery> parse();
+    std::unique_ptr<Database::Operation> parse();
     const std::string &errorMessage();
 
 private:
@@ -86,13 +33,13 @@ private:
     std::optional<Value> matchValue();
     Value expectValue();
 
-    std::unique_ptr<ParsedQuery> parseQuery();
-    std::unique_ptr<ParsedQuery> parseCreateTable();
-    std::unique_ptr<ParsedQuery> parseCreateIndex();
-    std::unique_ptr<ParsedQuery> parseInsert();
-    std::unique_ptr<ParsedQuery> parseSelect();
-    std::unique_ptr<ParsedQuery> parseDelete();
-    std::unique_ptr<ParsedQuery> parseUpdate();
+    std::unique_ptr<Database::Operation> parseOperation();
+    std::unique_ptr<Database::Operation> parseCreateTable();
+    std::unique_ptr<Database::Operation> parseCreateIndex();
+    std::unique_ptr<Database::Operation> parseInsert();
+    std::unique_ptr<Database::Operation> parseSelect();
+    std::unique_ptr<Database::Operation> parseDelete();
+    std::unique_ptr<Database::Operation> parseUpdate();
 
     std::unique_ptr<Expression> expectExpression();
     std::unique_ptr<Expression> parseOrExpression();

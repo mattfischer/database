@@ -24,31 +24,31 @@ Database::QueryResult Database::executeQuery(const std::string &queryString)
 {
     QueryParser parser(queryString);
 
-    std::unique_ptr<ParsedQuery> query = parser.parse();
-    if(!query) {
+    std::unique_ptr<Operation> operation = parser.parse();
+    if(!operation) {
         return {parser.errorMessage()};
     }
 
     try {
-        if(std::holds_alternative<ParsedQuery::CreateTable>(query->query))
-            return createTable(std::get<ParsedQuery::CreateTable>(query->query));
-        else if(std::holds_alternative<ParsedQuery::CreateIndex>(query->query))
-            return createIndex(std::get<ParsedQuery::CreateIndex>(query->query));
-        else if(std::holds_alternative<ParsedQuery::Insert>(query->query))
-            return insert(std::get<ParsedQuery::Insert>(query->query));
-        else if(std::holds_alternative<ParsedQuery::Select>(query->query))
-            return select(std::get<ParsedQuery::Select>(query->query));
-        else if(std::holds_alternative<ParsedQuery::Delete>(query->query))
-            return delete_(std::get<ParsedQuery::Delete>(query->query));
-        else if(std::holds_alternative<ParsedQuery::Update>(query->query))
-            return update(std::get<ParsedQuery::Update>(query->query));
+        if(std::holds_alternative<Operation::CreateTable>(operation->operation))
+            return createTable(std::get<Operation::CreateTable>(operation->operation));
+        else if(std::holds_alternative<Operation::CreateIndex>(operation->operation))
+            return createIndex(std::get<Operation::CreateIndex>(operation->operation));
+        else if(std::holds_alternative<Operation::Insert>(operation->operation))
+            return insert(std::get<Operation::Insert>(operation->operation));
+        else if(std::holds_alternative<Operation::Select>(operation->operation))
+            return select(std::get<Operation::Select>(operation->operation));
+        else if(std::holds_alternative<Operation::Delete>(operation->operation))
+            return delete_(std::get<Operation::Delete>(operation->operation));
+        else if(std::holds_alternative<Operation::Update>(operation->operation))
+            return update(std::get<Operation::Update>(operation->operation));
         else return {};
     } catch(QueryError e) {
         return {e.message};
     }
 }
 
-Database::QueryResult Database::createTable(ParsedQuery::CreateTable &createTable)
+Database::QueryResult Database::createTable(Operation::CreateTable &createTable)
 {
     Page &rootPage = mPageSet.addPage();
     std::unique_ptr table = std::make_unique<Table>(rootPage, std::move(createTable.schema));
@@ -58,7 +58,7 @@ Database::QueryResult Database::createTable(ParsedQuery::CreateTable &createTabl
     return {"Created table " + createTable.tableName};
 }
 
-Database::QueryResult Database::createIndex(ParsedQuery::CreateIndex &createIndex)
+Database::QueryResult Database::createIndex(Operation::CreateIndex &createIndex)
 {
     Table &table = findTable(createIndex.tableName);
 
@@ -83,7 +83,7 @@ Database::QueryResult Database::createIndex(ParsedQuery::CreateIndex &createInde
     return {"Created index " + createIndex.indexName};
 }
 
-Database::QueryResult Database::insert(ParsedQuery::Insert &insert)
+Database::QueryResult Database::insert(Operation::Insert &insert)
 {
     Table &table = findTable(insert.tableName);
 
@@ -109,70 +109,16 @@ Database::QueryResult Database::insert(ParsedQuery::Insert &insert)
     return {"Added row to table " + insert.tableName};
 }
 
-Database::QueryResult Database::select(ParsedQuery::Select &select)
+Database::QueryResult Database::select(Operation::Select &select)
 {
-    Table &table = findTable(select.tableName);
-
-    std::unique_ptr<RowIterator> iterator = std::make_unique<RowIterators::TableIterator>(table);
-
-    if(select.predicate) {
-        bindExpression(*select.predicate, table, select.tableName);
-        iterator = std::make_unique<RowIterators::SelectIterator>(std::move(iterator), std::move(select.predicate));
-    }
-
-    if(std::holds_alternative<ParsedQuery::Select::Aggregate>(select.columns)) {
-        auto &aggregate = std::get<ParsedQuery::Select::Aggregate>(select.columns);
-        RowIterators::AggregateIterator::Operation operation;
-        switch(aggregate.operation) {
-            case ParsedQuery::Select::Aggregate::Operation::Min: operation = RowIterators::AggregateIterator::Operation::Min; break;
-            case ParsedQuery::Select::Aggregate::Operation::Average: operation = RowIterators::AggregateIterator::Operation::Average; break;
-            case ParsedQuery::Select::Aggregate::Operation::Sum: operation = RowIterators::AggregateIterator::Operation::Sum; break;
-            case ParsedQuery::Select::Aggregate::Operation::Max: operation = RowIterators::AggregateIterator::Operation::Max; break;
-            case ParsedQuery::Select::Aggregate::Operation::Count: operation = RowIterators::AggregateIterator::Operation::Count; break;
-        };
-        unsigned int field = -1;
-        if(aggregate.operation != ParsedQuery::Select::Aggregate::Operation::Count) {
-            field = table.schema().fieldIndex(aggregate.field);
-        }
-        unsigned int groupField = -1;
-        if(aggregate.groupField != "") {
-            groupField = table.schema().fieldIndex(aggregate.groupField);
-            iterator = std::make_unique<RowIterators::SortIterator>(std::move(iterator), groupField);
-        }
-        iterator = std::make_unique<RowIterators::AggregateIterator>(std::move(iterator), operation, field, groupField);
-    } else {
-        if(!select.sortField.empty()) {
-            unsigned int field = tableFieldIndex(select.sortField, table, select.tableName);
-            iterator = std::make_unique<RowIterators::SortIterator>(std::move(iterator), field);
-        }
-
-        if(std::holds_alternative<ParsedQuery::Select::ColumnList>(select.columns)) {
-            auto &columnList = std::get<ParsedQuery::Select::ColumnList>(select.columns);
-            std::vector<RowIterators::ProjectIterator::FieldDefinition> fields;
-            for(auto &[name, expression] : columnList.columns) {
-                bindExpression(*expression, table, select.tableName);
-                RowIterators::ProjectIterator::FieldDefinition field;
-                field.name = name;
-                field.expression = std::move(expression);
-                fields.push_back(std::move(field));
-            }
-            iterator = std::make_unique<RowIterators::ProjectIterator>(std::move(iterator), std::move(fields));
-        }
-    }
+    auto iterator = buildIterator(select.query);
 
     return {"", std::move(iterator)};
 }
 
-Database::QueryResult Database::delete_(ParsedQuery::Delete &delete_)
+Database::QueryResult Database::delete_(Operation::Delete &delete_)
 {
-    Table &table = findTable(delete_.tableName);
-
-    std::unique_ptr<RowIterator> iterator = std::make_unique<RowIterators::TableIterator>(table);
-
-    if(delete_.predicate) {
-        bindExpression(*delete_.predicate, table, delete_.tableName);
-        iterator = std::make_unique<RowIterators::SelectIterator>(std::move(iterator), std::move(delete_.predicate));
-    }
+    auto iterator = buildIterator(delete_.query);
 
     int rowsRemoved = 0;
     iterator->start();
@@ -185,24 +131,19 @@ Database::QueryResult Database::delete_(ParsedQuery::Delete &delete_)
     return {ss.str()};
 }
 
-Database::QueryResult Database::update(ParsedQuery::Update &update)
+Database::QueryResult Database::update(Operation::Update &update)
 {
-    Table &table = findTable(update.tableName);
+    Table &table = findTable(update.query.tableName);
 
     std::vector<RowIterator::ModifyEntry> entries;
     for(auto &[name, expression] : update.values) {
-        unsigned int fieldIndex = tableFieldIndex(name, table, update.tableName);
-        bindExpression(*expression, table, update.tableName);
+        unsigned int fieldIndex = tableFieldIndex(name, table, update.query.tableName);
+        bindExpression(*expression, table, update.query.tableName);
         RowIterator::ModifyEntry entry = {fieldIndex, std::move(expression)};
         entries.push_back(std::move(entry));
     }
 
-    std::unique_ptr<RowIterator> iterator = std::make_unique<RowIterators::TableIterator>(table);
-
-    if(update.predicate) {
-        bindExpression(*update.predicate, table, update.tableName);
-        iterator = std::make_unique<RowIterators::SelectIterator>(std::move(iterator), std::move(update.predicate));
-    }
+    auto iterator = buildIterator(update.query);
 
     int rowsUpdated = 0;
     iterator->start();
@@ -214,6 +155,60 @@ Database::QueryResult Database::update(ParsedQuery::Update &update)
     std::stringstream ss;
     ss << rowsUpdated << " rows updated";
     return {ss.str()};
+}
+
+std::unique_ptr<RowIterator> Database::buildIterator(Query &query)
+{
+    Table &table = findTable(query.tableName);
+
+    std::unique_ptr<RowIterator> iterator = std::make_unique<RowIterators::TableIterator>(table);
+
+    if(query.predicate) {
+        bindExpression(*query.predicate, table, query.tableName);
+        iterator = std::make_unique<RowIterators::SelectIterator>(std::move(iterator), std::move(query.predicate));
+    }
+
+    if(std::holds_alternative<Query::Aggregate>(query.columns)) {
+        auto &aggregate = std::get<Query::Aggregate>(query.columns);
+        RowIterators::AggregateIterator::Operation operation;
+        switch(aggregate.operation) {
+            case Query::Aggregate::Operation::Min: operation = RowIterators::AggregateIterator::Operation::Min; break;
+            case Query::Aggregate::Operation::Average: operation = RowIterators::AggregateIterator::Operation::Average; break;
+            case Query::Aggregate::Operation::Sum: operation = RowIterators::AggregateIterator::Operation::Sum; break;
+            case Query::Aggregate::Operation::Max: operation = RowIterators::AggregateIterator::Operation::Max; break;
+            case Query::Aggregate::Operation::Count: operation = RowIterators::AggregateIterator::Operation::Count; break;
+        };
+        unsigned int field = -1;
+        if(aggregate.operation != Query::Aggregate::Operation::Count) {
+            field = table.schema().fieldIndex(aggregate.field);
+        }
+        unsigned int groupField = -1;
+        if(aggregate.groupField != "") {
+            groupField = table.schema().fieldIndex(aggregate.groupField);
+            iterator = std::make_unique<RowIterators::SortIterator>(std::move(iterator), groupField);
+        }
+        iterator = std::make_unique<RowIterators::AggregateIterator>(std::move(iterator), operation, field, groupField);
+    } else {
+        if(!query.sortField.empty()) {
+            unsigned int field = tableFieldIndex(query.sortField, table, query.tableName);
+            iterator = std::make_unique<RowIterators::SortIterator>(std::move(iterator), field);
+        }
+
+        if(std::holds_alternative<Query::ColumnList>(query.columns)) {
+            auto &columnList = std::get<Query::ColumnList>(query.columns);
+            std::vector<RowIterators::ProjectIterator::FieldDefinition> fields;
+            for(auto &[name, expression] : columnList.columns) {
+                bindExpression(*expression, table, query.tableName);
+                RowIterators::ProjectIterator::FieldDefinition field;
+                field.name = name;
+                field.expression = std::move(expression);
+                fields.push_back(std::move(field));
+            }
+            iterator = std::make_unique<RowIterators::ProjectIterator>(std::move(iterator), std::move(fields));
+        }
+    }
+
+    return iterator;
 }
 
 Table &Database::findTable(const std::string &name)
