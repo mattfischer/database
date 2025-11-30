@@ -71,8 +71,8 @@ Database::QueryResult Database::createIndex(Operation::CreateIndex &createIndex)
 
     std::vector<unsigned int> keys;
     for(auto &column : createIndex.columns) {
-        unsigned int fieldIndex = tableFieldIndex(column, table, createIndex.tableName);
-        keys.push_back(fieldIndex);
+        unsigned int field = fieldIndex(column, table.schema(), createIndex.tableName);
+        keys.push_back(field);
     }
 
     Page &rootPage = mPageSet.addPage();
@@ -134,17 +134,17 @@ Database::QueryResult Database::delete_(Operation::Delete &delete_)
 
 Database::QueryResult Database::update(Operation::Update &update)
 {
-    Table &table = findTable(update.query.tableName);
+    auto iterator = buildIterator(update.query);
+
+    Record::Schema &schema = iterator->schema();
 
     std::vector<RowIterator::ModifyEntry> entries;
     for(auto &[name, expression] : update.values) {
-        unsigned int fieldIndex = tableFieldIndex(name, table, update.query.tableName);
-        bindExpression(*expression, table, update.query.tableName);
-        RowIterator::ModifyEntry entry = {fieldIndex, std::move(expression)};
+        unsigned int field = fieldIndex(name, schema, tableName(update.query));
+        bindExpression(*expression, schema, tableName(update.query));
+        RowIterator::ModifyEntry entry = {field, std::move(expression)};
         entries.push_back(std::move(entry));
     }
-
-    auto iterator = buildIterator(update.query);
 
     int rowsUpdated = 0;
     iterator->start();
@@ -163,12 +163,17 @@ std::unique_ptr<RowIterator> Database::buildIterator(Query &query)
     Optimizer optimizer(*this);
     optimizer.optimize(query);
 
-    Table &table = findTable(query.tableName);
+    std::unique_ptr<RowIterator> iterator;
 
-    std::unique_ptr<RowIterator> iterator = std::make_unique<RowIterators::TableIterator>(table);
+    if(std::holds_alternative<Query::Table>(query.source)) {
+        auto &table = std::get<Query::Table>(query.source);
+        iterator = std::make_unique<RowIterators::TableIterator>(findTable(table.name));
+    }
+
+    Record::Schema &schema = iterator->schema();
 
     if(query.predicate) {
-        bindExpression(*query.predicate, table, query.tableName);
+        bindExpression(*query.predicate, schema, tableName(query));
         iterator = std::make_unique<RowIterators::SelectIterator>(std::move(iterator), std::move(query.predicate));
     }
 
@@ -184,17 +189,17 @@ std::unique_ptr<RowIterator> Database::buildIterator(Query &query)
         };
         unsigned int field = -1;
         if(aggregate.operation != Query::Aggregate::Operation::Count) {
-            field = table.schema().fieldIndex(aggregate.field);
+            field = fieldIndex(aggregate.field, schema, tableName(query));
         }
         unsigned int groupField = -1;
         if(aggregate.groupField != "") {
-            groupField = table.schema().fieldIndex(aggregate.groupField);
+            groupField = fieldIndex(aggregate.groupField, schema, tableName(query));
             iterator = std::make_unique<RowIterators::SortIterator>(std::move(iterator), groupField);
         }
         iterator = std::make_unique<RowIterators::AggregateIterator>(std::move(iterator), operation, field, groupField);
     } else {
         if(!query.sortField.empty()) {
-            unsigned int field = tableFieldIndex(query.sortField, table, query.tableName);
+            unsigned int field = fieldIndex(query.sortField, schema, tableName(query));
             iterator = std::make_unique<RowIterators::SortIterator>(std::move(iterator), field);
         }
 
@@ -202,7 +207,7 @@ std::unique_ptr<RowIterator> Database::buildIterator(Query &query)
             auto &columnList = std::get<Query::ColumnList>(query.columns);
             std::vector<RowIterators::ProjectIterator::FieldDefinition> fields;
             for(auto &[name, expression] : columnList.columns) {
-                bindExpression(*expression, table, query.tableName);
+                bindExpression(*expression, schema, tableName(query));
                 RowIterators::ProjectIterator::FieldDefinition field;
                 field.name = name;
                 field.expression = std::move(expression);
@@ -257,9 +262,9 @@ private:
     Record::Schema mSchema;
 };
 
-void Database::bindExpression(Expression &expression, Table &table, const std::string &tableName)
+void Database::bindExpression(Expression &expression, Record::Schema &schema, const std::string &tableName)
 {
-    SchemaBindContext context(table.schema());
+    SchemaBindContext context(schema);
     try {
         expression.bind(context);
     } catch(Expression::BindError e) {
@@ -269,9 +274,9 @@ void Database::bindExpression(Expression &expression, Table &table, const std::s
     }
 }
 
-unsigned int Database::tableFieldIndex(const std::string &name, Table &table, const std::string &tableName)
+unsigned int Database::fieldIndex(const std::string &name, Record::Schema &schema, const std::string &tableName)
 {
-    int fieldIndex = table.schema().fieldIndex(name);
+    int fieldIndex = schema.fieldIndex(name);
     if(fieldIndex == -1) {
         std::stringstream ss;
         ss << "Error: No column named " << name << "in table " << tableName;
@@ -279,4 +284,11 @@ unsigned int Database::tableFieldIndex(const std::string &name, Table &table, co
     }
 
     return (unsigned int)fieldIndex;
+}
+
+const std::string &Database::tableName(Query &query)
+{
+    if(std::holds_alternative<Query::Table>(query.source)) {
+        return std::get<Query::Table>(query.source).name;
+    }
 }

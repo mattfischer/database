@@ -30,7 +30,11 @@ public:
         };
         std::variant<AllColumns, ColumnList, Aggregate> columns;
 
-        std::string tableName;
+        struct Table {
+            std::string name;
+        };
+        std::variant<Table> source;
+
         std::unique_ptr<Expression> predicate;
         std::string sortField;
     };
@@ -89,8 +93,9 @@ private:
 
     Table &findTable(const std::string &name);
     Index &findIndex(const std::string &name);
-    void bindExpression(Expression &expression, Table &table, const std::string &tableName);
-    unsigned int tableFieldIndex(const std::string &name, Table &table, const std::string &tableName);
+    void bindExpression(Expression &expression, Record::Schema &schema, const std::string &tableName);
+    unsigned int fieldIndex(const std::string &name, Record::Schema &schema, const std::string &tableName);
+    const std::string &tableName(Query &query);
 
     PageSet mPageSet;
     std::map<std::string, std::unique_ptr<Table>> mTables;

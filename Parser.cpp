@@ -326,7 +326,9 @@ std::unique_ptr<Database::Operation> Parser::parseSelect()
 
     while(true) {
         if(matchLiteral("FROM")) {
-            select.query.tableName = expectIdentifier();
+            Database::Query::Table table;
+            table.name = expectIdentifier();
+            select.query.source = std::move(table);
         } else if(matchLiteral("WHERE")) {
             select.query.predicate = expectExpression();
         } else if(matchLiteral("ORDER")) {
@@ -355,7 +357,9 @@ std::unique_ptr<Database::Operation> Parser::parseDelete()
 
     while(true) {
         if(matchLiteral("FROM")) {
-            delete_.query.tableName = expectIdentifier();
+            Database::Query::Table table;
+            table.name = expectIdentifier();
+            delete_.query.source = std::move(table);
         } else if(matchLiteral("WHERE")) {
             delete_.query.predicate = expectExpression();
         } else {
@@ -371,7 +375,9 @@ std::unique_ptr<Database::Operation> Parser::parseUpdate()
     Database::Operation::Update update;
 
     update.query.columns = Database::Query::AllColumns();
-    update.query.tableName = expectIdentifier();
+    Database::Query::Table table;
+    table.name = expectIdentifier();
+    update.query.source = std::move(table);
 
     while(true) {
         if(matchLiteral("SET")) {
