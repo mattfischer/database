@@ -9,7 +9,7 @@ sources = [
     'Main.cpp',
     'Page.cpp',
     'PageSet.cpp',
-    'QueryParser.cpp',
+    'Parser.cpp',
     'Record.cpp',
     'RowIterator.cpp',
     'RowIterators/AggregateIterator.cpp',

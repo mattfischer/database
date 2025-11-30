@@ -1,6 +1,6 @@
 #include "Database.hpp"
 
-#include "QueryParser.hpp"
+#include "Parser.hpp"
 
 #include "RowIterators/TableIterator.hpp"
 #include "RowIterators/SelectIterator.hpp"
@@ -22,7 +22,7 @@ struct QueryError {
 
 Database::QueryResult Database::executeQuery(const std::string &queryString)
 {
-    QueryParser parser(queryString);
+    Parser parser(queryString);
 
     std::unique_ptr<Operation> operation = parser.parse();
     if(!operation) {

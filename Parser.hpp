@@ -1,5 +1,5 @@
-#ifndef QUERYPARSER_HPP
-#define QUERYPARSER_HPP
+#ifndef PARSER_HPP
+#define PARSER_HPP
 
 #include "Value.hpp"
 #include "Record.hpp"
@@ -12,9 +12,9 @@
 #include <optional>
 #include <variant>
 
-class QueryParser {
+class Parser {
 public:
-    QueryParser(const std::string &queryString);
+    Parser(const std::string &queryString);
 
     std::unique_ptr<Database::Operation> parse();
     const std::string &errorMessage();

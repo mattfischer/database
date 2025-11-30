@@ -1,4 +1,4 @@
-#include "QueryParser.hpp"
+#include "Parser.hpp"
 
 #include <sstream>
 
@@ -7,12 +7,12 @@ struct ParseError {
     unsigned int pos;
 };
 
-QueryParser::QueryParser(const std::string &queryString)
+Parser::Parser(const std::string &queryString)
 : mQueryString(queryString)
 {
 }
 
-std::unique_ptr<Database::Operation> QueryParser::parse()
+std::unique_ptr<Database::Operation> Parser::parse()
 {
     mPos = 0;
     skipWhitespace();
@@ -28,24 +28,24 @@ std::unique_ptr<Database::Operation> QueryParser::parse()
     }
 }
 
-const std::string &QueryParser::errorMessage()
+const std::string &Parser::errorMessage()
 {
     return mErrorMessage;
 }
 
-bool QueryParser::isEnd()
+bool Parser::isEnd()
 {
     return mPos >= mQueryString.size();
 }
 
-void QueryParser::throwExpected(const std::string &expected)
+void Parser::throwExpected(const std::string &expected)
 {
     std::stringstream ss;
     ss << "Expected: " << expected;
     throw ParseError { ss.str(), mPos };
 }
 
-void QueryParser::skipWhitespace()
+void Parser::skipWhitespace()
 {
     while(!isEnd()) {
         if(mQueryString[mPos] == ' ' || mQueryString[mPos] == '\t') {
@@ -57,7 +57,7 @@ void QueryParser::skipWhitespace()
     }
 }
 
-bool QueryParser::matchLiteral(const std::string &literal)
+bool Parser::matchLiteral(const std::string &literal)
 {
     if(mPos + literal.size() > mQueryString.size()) {
         return false;
@@ -72,14 +72,14 @@ bool QueryParser::matchLiteral(const std::string &literal)
     return false;
 }
 
-void QueryParser::expectLiteral(const std::string &literal)
+void Parser::expectLiteral(const std::string &literal)
 {
     if(!matchLiteral(literal)) {
         throwExpected(literal);
     }
 }
 
-std::optional<std::string> QueryParser::matchIdentifier()
+std::optional<std::string> Parser::matchIdentifier()
 {
     int pos = mPos;
     while(pos < mQueryString.size()) {
@@ -102,7 +102,7 @@ std::optional<std::string> QueryParser::matchIdentifier()
     return result;
 }
 
-std::string QueryParser::expectIdentifier()
+std::string Parser::expectIdentifier()
 {
     auto id = matchIdentifier();
     if(id) {
@@ -112,7 +112,7 @@ std::string QueryParser::expectIdentifier()
     }
 }
 
-Value::Type QueryParser::expectType()
+Value::Type Parser::expectType()
 {
     Value::Type result;
     if(matchLiteral("INTEGER") || matchLiteral("INT")) {
@@ -131,7 +131,7 @@ Value::Type QueryParser::expectType()
     return result;
 }
 
-std::optional<Value> QueryParser::matchValue()
+std::optional<Value> Parser::matchValue()
 {
     if(mQueryString[mPos] == '\"') {
         int pos = mPos + 1;
@@ -178,7 +178,7 @@ std::optional<Value> QueryParser::matchValue()
     }
 }
 
-Value QueryParser::expectValue()
+Value Parser::expectValue()
 {
     auto val = matchValue();
     if(val) {
@@ -188,7 +188,7 @@ Value QueryParser::expectValue()
     }
 }
 
-std::unique_ptr<Database::Operation> QueryParser::parseOperation()
+std::unique_ptr<Database::Operation> Parser::parseOperation()
 {
     if(matchLiteral("CREATE")) {
         if(matchLiteral("TABLE")) {
@@ -211,7 +211,7 @@ std::unique_ptr<Database::Operation> QueryParser::parseOperation()
     throwExpected("<query>");
 }
 
-std::unique_ptr<Database::Operation> QueryParser::parseCreateTable()
+std::unique_ptr<Database::Operation> Parser::parseCreateTable()
 {
     Database::Operation::CreateTable createTable;
 
@@ -230,7 +230,7 @@ std::unique_ptr<Database::Operation> QueryParser::parseCreateTable()
     return std::make_unique<Database::Operation>(std::move(createTable));
 }
 
-std::unique_ptr<Database::Operation> QueryParser::parseCreateIndex()
+std::unique_ptr<Database::Operation> Parser::parseCreateIndex()
 {
     Database::Operation::CreateIndex createIndex;
 
@@ -251,7 +251,7 @@ std::unique_ptr<Database::Operation> QueryParser::parseCreateIndex()
     return std::make_unique<Database::Operation>(std::move(createIndex));
 }
 
-std::unique_ptr<Database::Operation> QueryParser::parseInsert()
+std::unique_ptr<Database::Operation> Parser::parseInsert()
 {
     Database::Operation::Insert insert;
 
@@ -272,7 +272,7 @@ std::unique_ptr<Database::Operation> QueryParser::parseInsert()
     return std::make_unique<Database::Operation>(std::move(insert));
 }
 
-std::unique_ptr<Database::Operation> QueryParser::parseSelect()
+std::unique_ptr<Database::Operation> Parser::parseSelect()
 {
     Database::Operation::Select select;
 
@@ -347,7 +347,7 @@ std::unique_ptr<Database::Operation> QueryParser::parseSelect()
     return std::make_unique<Database::Operation>(std::move(select));
 }
 
-std::unique_ptr<Database::Operation> QueryParser::parseDelete()
+std::unique_ptr<Database::Operation> Parser::parseDelete()
 {
     Database::Operation::Delete delete_;
 
@@ -366,7 +366,7 @@ std::unique_ptr<Database::Operation> QueryParser::parseDelete()
     return std::make_unique<Database::Operation>(std::move(delete_));
 }
 
-std::unique_ptr<Database::Operation> QueryParser::parseUpdate()
+std::unique_ptr<Database::Operation> Parser::parseUpdate()
 {
     Database::Operation::Update update;
 
@@ -394,12 +394,12 @@ std::unique_ptr<Database::Operation> QueryParser::parseUpdate()
     return std::make_unique<Database::Operation>(std::move(update));
 }
 
-std::unique_ptr<Expression> QueryParser::expectExpression()
+std::unique_ptr<Expression> Parser::expectExpression()
 {
     return parseAndExpression();
 }
 
-std::unique_ptr<Expression> QueryParser::parseOrExpression()
+std::unique_ptr<Expression> Parser::parseOrExpression()
 {
     std::unique_ptr<Expression> result = parseAndExpression();
     while(matchLiteral("||")) {
@@ -410,7 +410,7 @@ std::unique_ptr<Expression> QueryParser::parseOrExpression()
     return result;
 }
 
-std::unique_ptr<Expression> QueryParser::parseAndExpression()
+std::unique_ptr<Expression> Parser::parseAndExpression()
 {
     std::unique_ptr<Expression> result = parseCompareExpression();
     while(matchLiteral("&&")) {
@@ -421,7 +421,7 @@ std::unique_ptr<Expression> QueryParser::parseAndExpression()
     return result;
 }
 
-std::unique_ptr<Expression> QueryParser::parseCompareExpression()
+std::unique_ptr<Expression> Parser::parseCompareExpression()
 {
     std::unique_ptr<Expression> result = parseAddSubExpression();
     if(matchLiteral("<=")) {
@@ -447,7 +447,7 @@ std::unique_ptr<Expression> QueryParser::parseCompareExpression()
     return result;
 }
 
-std::unique_ptr<Expression> QueryParser::parseAddSubExpression()
+std::unique_ptr<Expression> Parser::parseAddSubExpression()
 {
     std::unique_ptr<Expression> result = parseMulDivExpression();
     while(true) {
@@ -465,7 +465,7 @@ std::unique_ptr<Expression> QueryParser::parseAddSubExpression()
     return result;
 }
 
-std::unique_ptr<Expression> QueryParser::parseMulDivExpression()
+std::unique_ptr<Expression> Parser::parseMulDivExpression()
 {
     std::unique_ptr<Expression> result = parseUnaryExpression();
     while(true) {
@@ -483,7 +483,7 @@ std::unique_ptr<Expression> QueryParser::parseMulDivExpression()
     return result;
 }
 
-std::unique_ptr<Expression> QueryParser::parseUnaryExpression()
+std::unique_ptr<Expression> Parser::parseUnaryExpression()
 {
     if(matchLiteral("!")) {
         auto arg = parseUnaryExpression();
@@ -496,7 +496,7 @@ std::unique_ptr<Expression> QueryParser::parseUnaryExpression()
     }
 }
 
-std::unique_ptr<Expression> QueryParser::parseBaseExpression()
+std::unique_ptr<Expression> Parser::parseBaseExpression()
 {
     if(matchLiteral("(")) {
         auto exp = expectExpression();
