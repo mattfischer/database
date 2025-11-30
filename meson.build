@@ -7,6 +7,7 @@ sources = [
     'Expression.cpp',
     'Index.cpp',
     'Main.cpp',
+    'Optimizer.cpp',
     'Page.cpp',
     'PageSet.cpp',
     'Parser.cpp',

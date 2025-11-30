@@ -1,5 +1,6 @@
 #include "Database.hpp"
 
+#include "Optimizer.hpp"
 #include "Parser.hpp"
 
 #include "RowIterators/TableIterator.hpp"
@@ -159,6 +160,9 @@ Database::QueryResult Database::update(Operation::Update &update)
 
 std::unique_ptr<RowIterator> Database::buildIterator(Query &query)
 {
+    Optimizer optimizer(*this);
+    optimizer.optimize(query);
+
     Table &table = findTable(query.tableName);
 
     std::unique_ptr<RowIterator> iterator = std::make_unique<RowIterators::TableIterator>(table);
