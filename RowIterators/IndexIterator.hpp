@@ -12,8 +12,7 @@ namespace RowIterators {
         struct Limit {
             BTree::SearchComparison comparison;
             BTree::SearchPosition position;
-            Record::Writer writer;
-            int numFields;
+            std::vector<Value> values;
         };
 
         IndexIterator(Index &index, std::optional<Limit> startLimit, std::optional<Limit> endLimit);
@@ -31,7 +30,8 @@ namespace RowIterators {
     private:
         void updateTablePointer();
         int partialKeyCompare(BTree::Key a, BTree::Key b, int numFields);
-
+        BTree::Pointer lookupLimit(Limit &limit);
+    
         Index &mIndex;
         Index::Pointer mIndexPointer;
         Table::RowId mRowId;

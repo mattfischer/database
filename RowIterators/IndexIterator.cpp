@@ -18,22 +18,13 @@ namespace RowIterators {
     void IndexIterator::start()
     {
         if(mStartLimit) {
-            BTree::KeyComparator comparator = [&](BTree::Key a, BTree::Key b) {
-                return partialKeyCompare(a, b, mStartLimit->numFields);
-            };
-            Index::RecordKey key(mStartLimit->writer);
-            mStartPointer = mIndex.lookup(key, comparator, mStartLimit->comparison, mStartLimit->position);
+            mStartPointer = lookupLimit(*mStartLimit);
         } else {
             mStartPointer = mIndex.first();
         }
 
         if(mEndLimit) {
-            BTree::KeyComparator comparator = [&](BTree::Key a, BTree::Key b) {
-                return partialKeyCompare(a, b, mEndLimit->numFields);
-            };
-            
-            Index::RecordKey key(mEndLimit->writer);
-            mEndPointer = mIndex.lookup(key, comparator, mEndLimit->comparison, mEndLimit->position);
+            mEndPointer = lookupLimit(*mEndLimit);
         } else {
             mEndPointer = mIndex.last();
         }
@@ -99,5 +90,22 @@ namespace RowIterators {
             mRowId = mIndex.rowId(mIndexPointer);
             mTablePointer = mIndex.table().lookup(mRowId);
         }
+    }
+
+    BTree::Pointer IndexIterator::lookupLimit(Limit &limit)
+    {
+        BTree::KeyComparator comparator = [&](BTree::Key a, BTree::Key b) {
+            return partialKeyCompare(a, b, limit.values.size());
+        };
+        Record::Schema keySchema;
+        for(int i=0; i<limit.values.size(); i++) {
+            keySchema.fields.push_back(schema().fields[i]);
+        }
+        Record::Writer keyWriter(keySchema);
+        for(int i=0; i<limit.values.size(); i++) {
+            keyWriter.setField(i, limit.values[i]);
+        }
+        Index::RecordKey key(keyWriter);
+        return mIndex.lookup(key, comparator, limit.comparison, limit.position);
     }
 }

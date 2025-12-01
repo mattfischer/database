@@ -8,6 +8,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 
 class Database {
 public:
@@ -33,7 +34,17 @@ public:
         struct Table {
             std::string name;
         };
-        std::variant<Table> source;
+        struct Index {
+            struct Limit {
+                BTree::SearchComparison comparison;
+                BTree::SearchPosition position;
+                std::vector<Value> values;
+            };
+            std::string name;
+            std::optional<Limit> startLimit;
+            std::optional<Limit> endLimit;
+        };
+        std::variant<Table, Index> source;
 
         std::unique_ptr<Expression> predicate;
         std::string sortField;

@@ -4,6 +4,7 @@
 #include "Parser.hpp"
 
 #include "RowIterators/TableIterator.hpp"
+#include "RowIterators/IndexIterator.hpp"
 #include "RowIterators/SelectIterator.hpp"
 #include "RowIterators/SortIterator.hpp"
 #include "RowIterators/ProjectIterator.hpp"
@@ -168,6 +169,17 @@ std::unique_ptr<RowIterator> Database::buildIterator(Query &query)
     if(std::holds_alternative<Query::Table>(query.source)) {
         auto &table = std::get<Query::Table>(query.source);
         iterator = std::make_unique<RowIterators::TableIterator>(findTable(table.name));
+    } else if(std::holds_alternative<Query::Index>(query.source)) {
+        auto &index = std::get<Query::Index>(query.source);
+        std::optional<RowIterators::IndexIterator::Limit> startLimit;
+        if(index.startLimit) {
+            startLimit = {index.startLimit->comparison, index.startLimit->position, std::move(index.startLimit->values)};
+        }
+        std::optional<RowIterators::IndexIterator::Limit> endLimit;
+        if(index.endLimit) {
+            endLimit = {index.endLimit->comparison, index.endLimit->position, std::move(index.endLimit->values)};
+        }
+        iterator = std::make_unique<RowIterators::IndexIterator>(findIndex(index.name), std::move(startLimit), std::move(endLimit));
     }
 
     Record::Schema &schema = iterator->schema();
@@ -290,5 +302,7 @@ const std::string &Database::tableName(Query &query)
 {
     if(std::holds_alternative<Query::Table>(query.source)) {
         return std::get<Query::Table>(query.source).name;
+    } else if(std::holds_alternative<Query::Index>(query.source)) {
+        return std::get<Query::Index>(query.source).name;
     }
 }
