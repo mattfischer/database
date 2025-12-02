@@ -13,22 +13,13 @@ class Index {
 public:
     Index(Page &rootPage, Table &table, std::vector<unsigned int> keys);
 
-    class RecordKey {
-    public:
-        RecordKey(Record::Writer &writer) {
-            mData.resize(writer.dataSize());
-            writer.write(mData.data());
-        }
-
-        operator BTree::Key() {
-            return BTree::Key(mData.data(), mData.size());
-        }
- 
-    private:
-        std::vector<uint8_t> mData;
-    };
-
     typedef BTree::Pointer Pointer;
+
+    struct Limit {
+        BTree::SearchComparison comparison;
+        BTree::SearchPosition position;
+        std::vector<Value> values;
+    };
 
     Table &table();
     Record::Schema &keySchema();
@@ -43,12 +34,14 @@ public:
     bool moveNext(Pointer &pointer);
     bool movePrev(Pointer &pointer);
 
-    Pointer lookup(BTree::Key key, BTree::KeyComparator &comparator, BTree::SearchComparison comparison, BTree::SearchPosition position);
+    Pointer lookup(Limit &limit);
     Table::RowId rowId(Pointer pointer);
 
     void print();
 
 private:
+    int partialKeyCompare(BTree::Key a, BTree::Key b, int numFields);
+
     Table &mTable;
     std::vector<unsigned int> mKeys;
     Record::Schema mKeySchema;

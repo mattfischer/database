@@ -171,15 +171,7 @@ std::unique_ptr<RowIterator> Database::buildIterator(Query &query)
         iterator = std::make_unique<RowIterators::TableIterator>(findTable(table.name));
     } else if(std::holds_alternative<Query::Index>(query.source)) {
         auto &index = std::get<Query::Index>(query.source);
-        std::optional<RowIterators::IndexIterator::Limit> startLimit;
-        if(index.startLimit) {
-            startLimit = {index.startLimit->comparison, index.startLimit->position, std::move(index.startLimit->values)};
-        }
-        std::optional<RowIterators::IndexIterator::Limit> endLimit;
-        if(index.endLimit) {
-            endLimit = {index.endLimit->comparison, index.endLimit->position, std::move(index.endLimit->values)};
-        }
-        iterator = std::make_unique<RowIterators::IndexIterator>(findIndex(index.name), std::move(startLimit), std::move(endLimit));
+        iterator = std::make_unique<RowIterators::IndexIterator>(findIndex(index.name), std::move(index.startLimit), std::move(index.endLimit));
     }
 
     Record::Schema &schema = iterator->schema();

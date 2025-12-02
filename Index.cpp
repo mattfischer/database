@@ -37,6 +37,21 @@ public:
     }
 };
 
+class RecordKey {
+public:
+    RecordKey(Record::Writer &writer) {
+        mData.resize(writer.dataSize());
+        writer.write(mData.data());
+    }
+
+    operator BTree::Key() {
+        return BTree::Key(mData.data(), mData.size());
+    }
+
+private:
+    std::vector<uint8_t> mData;
+};
+
 Index::Index(Page &rootPage, Table &table, std::vector<unsigned int> keys)
 : mTable(table)
 , mKeys(std::move(keys))
@@ -130,11 +145,6 @@ bool Index::movePrev(Pointer &pointer)
     return mTree->movePrev(pointer);
 }
 
-Index::Pointer Index::lookup(BTree::Key key, BTree::KeyComparator &comparator, BTree::SearchComparison comparison, BTree::SearchPosition position)
-{
-    return mTree->lookup(key, comparator, comparison, position);
-}
-
 Table::RowId Index::rowId(Pointer pointer)
 {
     return *reinterpret_cast<Table::RowId*>(mTree->data(pointer));
@@ -143,4 +153,35 @@ Table::RowId Index::rowId(Pointer pointer)
 void Index::print()
 {
     mTree->print();
+}
+
+Index::Pointer Index::lookup(Limit &limit)
+{
+    BTree::KeyComparator comparator = [&](BTree::Key a, BTree::Key b) {
+        return partialKeyCompare(a, b, limit.values.size());
+    };
+    Record::Schema schema;
+    for(int i=0; i<limit.values.size(); i++) {
+        schema.fields.push_back(keySchema().fields[i]);
+    }
+    Record::Writer keyWriter(schema);
+    for(int i=0; i<limit.values.size(); i++) {
+        keyWriter.setField(i, limit.values[i]);
+    }
+    RecordKey key(keyWriter);
+    return mTree->lookup(key, comparator, limit.comparison, limit.position);
+}
+
+int Index::partialKeyCompare(BTree::Key a, BTree::Key b, int numFields)
+{
+    Record::Reader readerA(keySchema(), a.data);
+    Record::Reader readerB(keySchema(), b.data);
+    for(int i=0; i<numFields; i++) {
+        Value valueA = readerA.readField(i);
+        Value valueB = readerB.readField(i);
+
+        if(valueA < valueB) return -1;
+        if(valueA > valueB) return 1;
+    }
+    return 0;
 }

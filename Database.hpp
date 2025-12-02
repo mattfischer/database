@@ -35,14 +35,9 @@ public:
             std::string name;
         };
         struct Index {
-            struct Limit {
-                BTree::SearchComparison comparison;
-                BTree::SearchPosition position;
-                std::vector<Value> values;
-            };
             std::string name;
-            std::optional<Limit> startLimit;
-            std::optional<Limit> endLimit;
+            std::optional<::Index::Limit> startLimit;
+            std::optional<::Index::Limit> endLimit;
         };
         std::variant<Table, Index> source;
 
